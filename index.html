@@ -2,16 +2,16 @@
 <html lang="pt-BR">
 <head>
     <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, orientation=landscape">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
     <meta name="mobile-web-app-capable" content="yes">
     <meta name="apple-mobile-web-app-capable" content="yes">
     <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
     <title>Combate!</title>
     <style>
         body {
-            background-color: #000;
+            background-color: #87CEEB; 
             color: #fff;
-            font-family: 'Courier New', Courier, monospace;
+            font-family: sans-serif; 
             text-align: center;
             margin: 0;
             padding: 0;
@@ -26,23 +26,21 @@
             display: flex;
             align-items: center;
             justify-content: center;
-            background: #111;
+            background: #000; 
         }
         canvas {
-            background-color: #87CEEB;
-            box-shadow: 0 0 20px rgba(0,0,0,0.9);
-            cursor: crosshair;
+            background-color: transparent;
             image-rendering: pixelated;
-            max-width: 100%;
-            max-height: 100%;
-            object-fit: contain;
-            aspect-ratio: 16 / 9;
+            width: 100%;
+            height: 100%;
+            object-fit: cover;
+            aspect-ratio: 400 / 700;
         }
 
-        /* --- MENSAGENS CENTRAIS GIGANTES --- */
+        /* --- MENSAGENS CENTRAIS --- */
         #center-modal {
             position: absolute;
-            top: 40%;
+            top: 15%; 
             left: 50%;
             transform: translate(-50%, -50%);
             display: flex;
@@ -50,135 +48,194 @@
             align-items: center;
             pointer-events: none; 
             z-index: 20;
-            width: 80%;
+            width: 90%;
+            max-width: 380px;
         }
         .modal-box {
-            background: rgba(0, 0, 0, 0.85);
-            padding: 20px 30px;
+            background: rgba(0, 0, 0, 0.65);
+            padding: 12px 18px;
             border-radius: 12px;
-            border: 2px solid #555;
-            font-size: 20px;
-            font-weight: bold;
+            font-size: 16px;
+            font-weight: 500;
             margin-bottom: 15px;
-            text-shadow: 2px 2px 0px #000;
-            box-shadow: 0 0 15px rgba(0,0,0,0.8);
-            line-height: 1.5; /* Melhor espaçamento para a lista de vencedores */
+            box-shadow: 0 4px 15px rgba(0,0,0,0.4);
+            line-height: 1.4;
+            backdrop-filter: blur(4px);
         }
         #btn-action {
             pointer-events: auto; 
-            background: #2e8b57;
-            color: white;
-            border: 2px solid #3cb371;
-            padding: 12px 30px;
-            font-size: 18px;
+            background: #fff;
+            color: #000;
+            border: none;
+            padding: 10px 30px;
+            font-size: 15px;
             font-weight: bold;
             cursor: pointer;
-            border-radius: 8px;
-            font-family: inherit;
+            border-radius: 25px;
+            transition: transform 0.1s;
+            box-shadow: 0 4px 10px rgba(0,0,0,0.3);
         }
-        #btn-action:active { transform: translateY(3px); }
+        #btn-action:active { transform: translateY(3px) scale(0.95); }
 
-        /* --- BARRA INFERIOR --- */
+        /* --- DRAMA KILL MSG --- */
+        #dramatic-kill {
+            position: absolute;
+            top: 35%;
+            left: 50%;
+            transform: translate(-50%, -50%);
+            font-size: 22px; 
+            font-weight: 900;
+            color: #ff3333;
+            text-shadow: 2px 2px 0 #000, -1px -1px 0 #fff;
+            display: none;
+            z-index: 100;
+            text-transform: uppercase;
+            text-align: center;
+            width: 90%;
+            white-space: pre-wrap; 
+            pointer-events: none;
+            line-height: 1.2;
+        }
+
+        @keyframes popIn {
+            0% { transform: translate(-50%, -50%) scale(0.1); opacity: 0; }
+            40% { transform: translate(-50%, -50%) scale(1.1); opacity: 1; }
+            60% { transform: translate(-50%, -50%) scale(0.95); opacity: 1; }
+            100% { transform: translate(-50%, -50%) scale(1); opacity: 1; }
+        }
+
+        /* --- BARRA INFERIOR MINIMALISTA E MAIOR --- */
         #bottom-bar {
             position: absolute;
             bottom: 0;
-            left: 0;
+            left: 50%;
+            transform: translateX(-50%);
             width: 100%;
-            height: 60px;
-            background: rgba(20, 20, 20, 0.95);
-            border-top: 2px solid #444;
+            height: 240px; 
+            background: rgba(15, 15, 15, 0.98);
+            border-top: 1px solid rgba(255,255,255,0.1);
             display: flex;
+            flex-direction: column;
             align-items: center;
-            justify-content: space-between;
-            padding: 0 20px;
+            padding: 15px 20px;
             box-sizing: border-box;
             z-index: 30;
+            box-shadow: 0 -5px 20px rgba(0,0,0,0.5);
+        }
+
+        .row-ui {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            width: 100%;
+            max-width: 400px;
+            margin-bottom: 15px;
         }
 
         #status-text {
-            font-size: 16px;
+            font-size: 14px;
+            color: #ddd;
             font-weight: bold;
-            color: #d4af37;
-            text-align: left;
-            flex: 1;
         }
 
-        #action-buttons {
-            display: none; 
-            gap: 15px;
-            flex: 1;
-            justify-content: center;
-        }
-        
-        .action-btn {
+        /* Botões Minimalistas */
+        .minimal-btn {
+            pointer-events: auto;
+            background: transparent;
+            color: white;
+            border: 1px solid rgba(255,255,255,0.4);
             padding: 8px 20px;
-            font-size: 14px;
+            font-size: 13px;
             font-weight: bold;
-            background: rgba(51, 51, 51, 0.8);
-            border: 2px solid #555;
             border-radius: 20px;
             cursor: pointer;
-            color: white;
-            font-family: inherit;
+            transition: all 0.2s ease;
         }
-        .action-btn.active {
-            background: rgba(212, 175, 55, 0.9);
+        .minimal-btn.active {
+            background: white;
             color: black;
-            border-color: #fff;
-            box-shadow: 0 0 10px rgba(212, 175, 55, 0.8);
+            border-color: white;
+        }
+        .minimal-btn.danger { color: #ff5555; border-color: rgba(255,85,85,0.4); }
+        .minimal-btn.danger:active { background: #ff5555; color: white; }
+
+        /* --- VIRTUAL JOYSTICK --- */
+        #joystick-zone {
+            display: none; 
+            width: 100px;
+            height: 100px;
+            background: rgba(255,255,255,0.05);
+            border: 1px solid rgba(255,255,255,0.15);
+            border-radius: 50%;
+            position: relative;
+            pointer-events: auto;
+            margin-top: 5px;
+        }
+        #joystick-knob {
+            width: 40px;
+            height: 40px;
+            background: #fff;
+            border-radius: 50%;
+            position: absolute;
+            top: 30px; 
+            left: 30px;
+            box-shadow: 0 4px 10px rgba(0,0,0,0.5);
+            transition: transform 0.1s ease-out; 
+        }
+        #joy-cancel {
+            position: absolute;
+            top: -25px;
+            left: 50%;
+            transform: translateX(-50%);
+            color: #ff5555;
+            font-weight: bold;
+            font-size: 11px;
+            background: rgba(0,0,0,0.7);
+            padding: 2px 8px;
+            border-radius: 10px;
+            display: none;
+            pointer-events: none;
         }
 
-        #btn-restart {
-            background: #8b2e2e;
-            color: white;
-            border: 1px solid #b33c3c;
-            padding: 8px 15px;
-            font-size: 14px;
-            cursor: pointer;
-            border-radius: 4px;
-            font-family: inherit;
-            flex-shrink: 0;
-        }
-        #btn-restart:active { transform: translateY(2px); }
-
-        @media (orientation: portrait) {
-            #game-container::before {
-                content: "Gire o celular para a horizontal!";
-                position: absolute;
-                top: 0; left: 0; width: 100%; height: 100%;
-                background: #000;
-                color: #fff;
-                z-index: 9999;
-                display: flex;
-                align-items: center;
-                justify-content: center;
-                font-size: 20px;
-                font-weight: bold;
-            }
-        }
     </style>
 </head>
 <body>
 
     <div id="game-container">
-        <canvas id="gameCanvas" width="800" height="450"></canvas>
+        <!-- Canvas ocupando a tela toda -->
+        <canvas id="gameCanvas" width="400" height="700"></canvas>
         
-        <!-- MENSAGEM GIGANTE NO CENTRO -->
+        <!-- Texto Dramático Abate -->
+        <div id="dramatic-kill">ELIMINADO!</div>
+
+        <!-- Textos Fases Iniciais -->
         <div id="center-modal">
-            <div class="modal-box" id="modal-text">Fase 1: Desenhe o terreno esquerdo!</div>
+            <div class="modal-box" id="modal-text">Desenhe o terreno com o dedo da esquerda para a direita</div>
             <button id="btn-action" onclick="nextPhase()">Pronto</button>
         </div>
 
-        <!-- BARRA INFERIOR -->
+        <!-- UI INFERIOR MINIMALISTA -->
         <div id="bottom-bar">
-            <div id="status-text">Aguardando...</div>
-            
-            <div id="action-buttons">
-                <button id="btn-shoot" class="action-btn active" onclick="setAction('SHOOT')">🎯 Atirar</button>
-                <button id="btn-jump" class="action-btn" onclick="setAction('JUMP')">🦘 Pular</button>
+            <!-- Linha 1: Status e Reiniciar -->
+            <div class="row-ui">
+                <span id="status-text">Terreno</span>
+                <button class="minimal-btn danger" onclick="resetGame()">Reiniciar</button>
             </div>
-
-            <button id="btn-restart" onclick="resetGame()">Reiniciar</button>
+            
+            <!-- Linha 2: Ações e Alternar Tela -->
+            <div class="row-ui" id="action-area" style="display:none;">
+                <div style="display: flex; gap: 10px;">
+                    <button id="btn-shoot" class="minimal-btn active" onclick="setAction('SHOOT')">Atirar</button>
+                    <button id="btn-jump" class="minimal-btn" onclick="setAction('JUMP')">Pular</button>
+                </div>
+                <button class="minimal-btn" onclick="toggleScreen()">Alternar Tela</button>
+            </div>
+            
+            <!-- Linha 3: Joystick -->
+            <div id="joystick-zone">
+                <div id="joy-cancel">CANCELAR</div>
+                <div id="joystick-knob"></div>
+            </div>
         </div>
     </div>
 
@@ -186,16 +243,33 @@
     const canvas = document.getElementById('gameCanvas');
     const ctx = canvas.getContext('2d');
     
-    // UI Elements
     const centerModal = document.getElementById('center-modal');
     const modalText = document.getElementById('modal-text');
     const btnAction = document.getElementById('btn-action');
     const statusText = document.getElementById('status-text');
-    const actionButtons = document.getElementById('action-buttons');
+    const actionArea = document.getElementById('action-area');
     const btnShoot = document.getElementById('btn-shoot');
     const btnJump = document.getElementById('btn-jump');
+    const dramaticKill = document.getElementById('dramatic-kill');
+    
+    const joystickZone = document.getElementById('joystick-zone');
+    const joystickKnob = document.getElementById('joystick-knob');
+    const joyCancel = document.getElementById('joy-cancel');
+
+    // Imagem de Fundo
+    const bgImage = new Image();
+    bgImage.src = 'assets/img/fundo.png';
 
     const ALL_NAMES = ["Morg", "Vitor", "Wagner", "V", "CAP", "Cleber", "nomaR", "Will", "Coronel", "Master", "DAI", "Lutika", "Drih"];
+    const TAUNTS = [
+        "HAHAHA!", "ERROU!", "VC É RUIM!", "FRACO!", 
+        "NUNCA ME PEGARÁ!", "PASSOU LONGE!", "PRECISA DE ÓCULOS?", 
+        "QUE MIRA HORRÍVEL!", "SÓ ISSO?", "TENTA DE NOVO!"
+    ];
+
+    const SCREEN_W = 400;
+    const WORLD_W = 800;
+    let cameraX = 0; 
 
     let gameState;
     let terrain;
@@ -207,22 +281,31 @@
     let currentAction = 'SHOOT'; 
     let actionInProgress = false; 
 
+    // Joystick e Mira
+    let isDraggingJoy = false;
+    let isCancelingJoy = false;
+    let joyAimDx = 0;
+    let joyAimDy = 0;
+
+    // Mecânica de Desenho
     let isMouseDown = false;
     let lastMouseX = -1, lastMouseY = -1;
-    let aimStartX, aimStartY, aimEndX, aimEndY;
+    
+    // Efeitos e Drops
     let projectile = null;
     let explosions = [];
-    let clouds = [];
-    let placedFriends;
+    let bloodPuddles = []; 
+    let ghosts = []; // Matriz dos fantasmas
+    let activeBox = null;
+    let shotsUntilDrop = 5;
 
+    let placedFriends = 0;
     let currentTrajectory = [];
     let savedTrajectory = [];
     let savedAim = null; 
-    let killMessages = []; // Feed de quem matou quem
-
-    // --- SISTEMA DE ÁUDIO (Web Audio API Retro) ---
     let audioCtx = null;
 
+    // --- SISTEMA DE ÁUDIO ---
     function initAudio() {
         if (!audioCtx) {
             const AudioContext = window.AudioContext || window.webkitAudioContext;
@@ -255,81 +338,78 @@
         
         let noise = audioCtx.createBufferSource();
         noise.buffer = buffer;
-        
         let filter = audioCtx.createBiquadFilter();
         filter.type = 'lowpass';
         filter.frequency.setValueAtTime(800, audioCtx.currentTime);
         filter.frequency.linearRampToValueAtTime(100, audioCtx.currentTime + 0.8);
-        
         let gain = audioCtx.createGain();
         gain.gain.setValueAtTime(0.8, audioCtx.currentTime);
         gain.gain.exponentialRampToValueAtTime(0.01, audioCtx.currentTime + 0.8);
-        
         noise.connect(filter);
         filter.connect(gain);
         gain.connect(audioCtx.destination);
         noise.start();
     }
 
-    // --- TELA CHEIA E TRAVA ---
+    // --- FULLSCREEN ---
     function forceFullScreen() {
         initAudio(); 
         let elem = document.documentElement;
         if (!document.fullscreenElement && !document.webkitFullscreenElement) {
             let req = elem.requestFullscreen || elem.webkitRequestFullscreen || elem.msRequestFullscreen;
-            if (req) {
-                req.call(elem).then(() => {
-                    if (screen.orientation && screen.orientation.lock) {
-                        screen.orientation.lock('landscape').catch(() => {});
-                    }
-                }).catch(() => {});
-            }
+            if (req) req.call(elem).catch(() => {});
         }
     }
 
-    // --- MENSAGENS DE ABATES ---
-    function addKillMessage(killer, victim) {
-        // Se a pessoa se matar, a mensagem reflete isso rsrs
-        let text = killer === victim ? `${killer} cometeu um erro fatal!` : `💥 ${killer} eliminou ${victim}`;
-        killMessages.push({ text: text, life: 150 }); // Fica visível por ~2.5 segundos
+    // --- MENSAGEM DRAMÁTICA ---
+    function showDramaticMessage(text, color = '#ff3333') {
+        dramaticKill.innerText = text;
+        dramaticKill.style.color = color;
+        dramaticKill.style.display = 'block';
+        dramaticKill.style.animation = 'none';
+        void dramaticKill.offsetWidth; 
+        dramaticKill.style.animation = 'popIn 0.5s ease-out forwards';
+        setTimeout(() => { dramaticKill.style.display = 'none'; }, 2500);
     }
 
-    // --- INICIALIZAÇÃO ---
+    function toggleScreen() {
+        forceFullScreen();
+        cameraX = cameraX === 0 ? 400 : 0;
+    }
+
     function initGame() {
         gameState = 'DRAWING';
-        terrain = new Array(800).fill(350); 
+        terrain = new Array(WORLD_W).fill(canvas.height - 350); 
         players = new Array(6).fill(null);
         currentPlayerIndex = 0;
         actionsLeft = 2;
         actionInProgress = false;
         isMouseDown = false;
+        cameraX = 0; 
+        
         projectile = null;
         explosions = [];
+        bloodPuddles = [];
+        ghosts = [];
+        activeBox = null;
+        shotsUntilDrop = 5;
+        
         currentTrajectory = [];
         savedTrajectory = [];
         savedAim = null;
-        killMessages = [];
         placedFriends = 0;
-        clouds = generateClouds();
 
         matchNames = [...ALL_NAMES].sort(() => 0.5 - Math.random()).slice(0, 6);
 
-        // UI Inicial
         centerModal.style.display = 'flex';
-        modalText.innerHTML = "FASE 1: Desenhe o terreno do seu lado esquerdo!";
+        modalText.innerHTML = "Desenhe o terreno com o dedo da esquerda para a direita";
         btnAction.style.display = 'inline-block';
+        dramaticKill.style.display = 'none';
         
-        statusText.innerText = "Preparação: Terreno";
-        actionButtons.style.display = 'none';
+        statusText.innerText = "Fase 1 - Terreno";
+        actionArea.style.display = 'none';
+        joystickZone.style.display = 'none';
         setAction('SHOOT');
-    }
-
-    function generateClouds() {
-        let c = [];
-        for (let i = 0; i < 4; i++) {
-            c.push({ x: Math.random() * 800, y: 20 + Math.random() * 100, speed: 0.1 + Math.random() * 0.2, radius: 10 + Math.random() * 10 });
-        }
-        return c;
     }
 
     function setAction(actionType) {
@@ -338,8 +418,161 @@
         currentAction = actionType;
         btnShoot.classList.toggle('active', actionType === 'SHOOT');
         btnJump.classList.toggle('active', actionType === 'JUMP');
+        
+        if (actionType === 'SHOOT') {
+            joystickZone.style.display = 'block';
+        } else {
+            joystickZone.style.display = 'none';
+        }
     }
 
+    // --- LÓGICA DO JOYSTICK ---
+    function handleJoyStart(e) {
+        if (gameState !== 'PLAYING' || currentAction !== 'SHOOT' || actionInProgress) return;
+        isDraggingJoy = true;
+        joystickKnob.style.transition = 'none';
+        updateJoy(e);
+    }
+
+    function handleJoyMove(e) {
+        if (!isDraggingJoy) return;
+        e.preventDefault(); 
+        updateJoy(e);
+    }
+
+    function handleJoyEnd(e) {
+        if (!isDraggingJoy) return;
+        isDraggingJoy = false;
+        joystickKnob.style.transition = 'transform 0.1s ease-out';
+        joystickKnob.style.transform = `translate(0px, 0px)`;
+        joyCancel.style.display = 'none';
+        
+        let dist = Math.hypot(joyAimDx, joyAimDy);
+        if (dist > 15 && !isCancelingJoy) {
+            let rawDx = -joyAimDx * 3.5;
+            let rawDy = -joyAimDy * 3.5;
+            executeShoot(rawDx * 0.1, rawDy * 0.1, rawDx, rawDy);
+        }
+        
+        joyAimDx = 0; joyAimDy = 0;
+        isCancelingJoy = false;
+    }
+
+    function updateJoy(e) {
+        let rect = joystickZone.getBoundingClientRect();
+        let clientX = e.touches ? e.touches[0].clientX : e.clientX;
+        let clientY = e.touches ? e.touches[0].clientY : e.clientY;
+        
+        let dx = clientX - rect.left - 50;
+        let dy = clientY - rect.top - 50;
+        let dist = Math.hypot(dx, dy);
+        let maxRadius = 50; 
+        
+        if (dist < 15) {
+            isCancelingJoy = true;
+            joyCancel.style.display = 'block';
+        } else {
+            isCancelingJoy = false;
+            joyCancel.style.display = 'none';
+        }
+
+        if (dist > maxRadius) {
+            dx = (dx / dist) * maxRadius;
+            dy = (dy / dist) * maxRadius;
+        }
+        
+        joyAimDx = dx; joyAimDy = dy;
+        joystickKnob.style.transform = `translate(${dx}px, ${dy}px)`;
+    }
+
+    joystickZone.addEventListener('mousedown', handleJoyStart);
+    document.addEventListener('mousemove', handleJoyMove);
+    document.addEventListener('mouseup', handleJoyEnd);
+    joystickZone.addEventListener('touchstart', handleJoyStart, {passive: false});
+    document.addEventListener('touchmove', handleJoyMove, {passive: false});
+    document.addEventListener('touchend', handleJoyEnd, {passive: false});
+
+    // --- LÓGICA DE CAIXAS (DROPS) ---
+    function spawnBox() {
+        let typeRand = Math.random();
+        let type = typeRand < 0.4 ? '+1' : (typeRand < 0.8 ? '+2' : 'REVIVE');
+        let bx = 50 + Math.random() * 700;
+        activeBox = { x: bx, y: terrain[Math.floor(bx)] - 15, type: type };
+    }
+
+    function checkBoxCollision() {
+        if (!activeBox) return;
+        players.forEach(p => {
+            if (p && p.alive) {
+                if (Math.hypot(p.x - activeBox.x, p.y - activeBox.y) < 25) {
+                    openBox(p);
+                }
+            }
+        });
+    }
+
+    function openBox(p) {
+        if (!activeBox) return;
+        let t = activeBox.type;
+        
+        if (t === '+1' || t === '+2') {
+            if (p.team === players[currentPlayerIndex].team) {
+                actionsLeft += (t === '+1' ? 1 : 2);
+                showDramaticMessage(`${p.name} PEGOU ${t} AÇÃO!`, '#aaffaa');
+            }
+        } else if (t === 'REVIVE') {
+            let deadAllies = players.filter(ally => ally && ally.team === p.team && !ally.alive);
+            if (deadAllies.length > 0) {
+                let revived = deadAllies[Math.floor(Math.random() * deadAllies.length)];
+                revived.alive = true;
+                revived.x = activeBox.x;
+                revived.y = activeBox.y - 5;
+                revived.vx = 0; revived.vy = 0;
+                showDramaticMessage(`${revived.name} REVIVEU!`, '#ffffaa');
+            } else {
+                showDramaticMessage(`CAIXA VAZIA...`, '#aaaaaa');
+            }
+        }
+        
+        explosions.push({ x: activeBox.x, y: activeBox.y, radius: 25, life: 25, type: 'sparkle' });
+        activeBox = null;
+        shotsUntilDrop = 3;
+        updateStatusText();
+    }
+
+    // --- SIMULADOR DE MIRA (Trajetória Predita) ---
+    function getAimColor(p, joyDx, joyDy) {
+        let simX = p.x;
+        let simY = p.y - 15;
+        let simVx = (-joyDx * 3.5) * 0.1;
+        let simVy = (-joyDy * 3.5) * 0.1;
+        
+        let steps = 0;
+        let maxSteps = 400;
+
+        while (steps < maxSteps) {
+            simX += simVx;
+            simY += simVy;
+            simVy += 0.15; 
+
+            if (simX < 0 || simX >= WORLD_W || simY > canvas.height + 50) {
+                return 'rgba(255, 51, 51, 0.9)'; 
+            }
+
+            if (simY >= terrain[Math.floor(simX)]) {
+                if (simX < SCREEN_W) {
+                    return 'rgba(255, 51, 51, 0.9)'; 
+                } else {
+                    return 'rgba(255, 255, 255, 0.9)'; 
+                }
+            }
+            steps++;
+        }
+        return 'rgba(255, 51, 51, 0.9)'; 
+    }
+
+
+    // --- LOOP PRINCIPAL ---
     function gameLoop() {
         update();
         draw();
@@ -347,29 +580,42 @@
     }
 
     function update() {
-        clouds.forEach(cloud => { cloud.x += cloud.speed; if (cloud.x > 850) cloud.x = -50; });
+        // Atualiza a posição da caixa caindo
+        if (activeBox) {
+            let groundY = terrain[Math.floor(activeBox.x)];
+            if (activeBox.y < groundY - 12) activeBox.y += 3;
+            else activeBox.y = groundY - 12;
+        }
 
-        // Atualiza Feed de Abates
-        killMessages.forEach(msg => msg.life--);
-        killMessages = killMessages.filter(msg => msg.life > 0);
+        // Atualiza Fantasmas
+        ghosts.forEach(g => {
+            g.y -= 1; // Sobe
+            g.x += Math.sin(g.life * 0.1) * 0.5; // Zigue-zague
+            g.life--;
+        });
+        ghosts = ghosts.filter(g => g.life > 0);
 
         if (gameState === 'PLAYING') {
+            checkBoxCollision();
+
             players.forEach(p => {
-                if (p && p.alive) {
-                    p.x += p.vx;
-                    p.y += p.vy;
-                    p.vy += 0.25; 
-
-                    if (p.x < 5) p.x = 5;
-                    if (p.x > canvas.width - 5) p.x = canvas.width - 5;
-
-                    let groundY = terrain[Math.floor(p.x)];
+                if (p) {
+                    if (p.taunt && p.taunt.life > 0) p.taunt.life--;
                     
-                    if (p.y >= groundY) {
-                        p.y = groundY;
-                        p.vy = 0;
-                        p.vx *= 0.5; 
-                        if (Math.abs(p.vx) < 0.1) p.vx = 0; 
+                    if (p.alive) {
+                        p.x += p.vx;
+                        p.y += p.vy;
+                        p.vy += 0.25; 
+                        if (p.x < 5) p.x = 5;
+                        if (p.x > WORLD_W - 5) p.x = WORLD_W - 5;
+
+                        let groundY = terrain[Math.floor(p.x)];
+                        if (p.y >= groundY) {
+                            p.y = groundY;
+                            p.vy = 0;
+                            p.vx *= 0.5; 
+                            if (Math.abs(p.vx) < 0.1) p.vx = 0; 
+                        }
                     }
                 }
             });
@@ -379,16 +625,19 @@
                 projectile.y += projectile.vy;
                 projectile.vy += 0.15;
                 
+                if (projectile.x >= SCREEN_W && cameraX === 0) cameraX = 400;
+                else if (projectile.x < SCREEN_W && cameraX === 400) cameraX = 0;
+
                 currentTrajectory.push({x: projectile.x, y: projectile.y});
 
                 if (Math.random() > 0.3) {
                     explosions.push({ x: projectile.x, y: projectile.y, radius: 2, life: 10, type: 'smoke' });
                 }
 
-                if (projectile.x < 0 || projectile.x > canvas.width || projectile.y > canvas.height + 50) {
+                if (projectile.x < 0 || projectile.x > WORLD_W || projectile.y > canvas.height + 50) {
                     saveAndClearProjectile();
-                    statusText.innerText = "Míssil perdido!";
-                    setTimeout(finishAction, 1000);
+                    let hasTaunt = triggerMissTaunt(-100, -100); 
+                    setTimeout(finishAction, hasTaunt ? 4000 : 1000); 
                 } 
                 else if (projectile.y >= terrain[Math.floor(projectile.x)]) {
                     triggerExplosion(projectile.x, projectile.y);
@@ -401,6 +650,21 @@
         }
     }
 
+    function triggerMissTaunt(ex, ey) {
+        let pTurn = players[currentPlayerIndex];
+        if(!pTurn) return false;
+        let enemies = players.filter(p => p && p.alive && p.team !== pTurn.team);
+        
+        if (enemies.length > 0) {
+            enemies.sort((a,b) => Math.hypot(a.x - ex, a.y - ey) - Math.hypot(b.x - ex, b.y - ey));
+            let closest = enemies[0];
+            let msg = TAUNTS[Math.floor(Math.random() * TAUNTS.length)];
+            closest.taunt = { text: msg, life: 120 }; 
+            return true;
+        }
+        return false;
+    }
+
     function saveAndClearProjectile() {
         savedTrajectory = [...currentTrajectory];
         currentTrajectory = [];
@@ -409,22 +673,55 @@
 
     function draw() {
         ctx.clearRect(0, 0, canvas.width, canvas.height);
+        ctx.save();
+        ctx.translate(-cameraX, 0);
 
-        ctx.fillStyle = 'rgba(255, 255, 255, 0.7)';
-        clouds.forEach(cloud => { drawCloudShape(cloud.x, cloud.y, cloud.radius); });
-
-        ctx.fillStyle = '#2e8b57';
-        ctx.beginPath(); ctx.moveTo(0, canvas.height);
-        for (let x = 0; x < canvas.width; x++) ctx.lineTo(x, terrain[x]);
-        ctx.lineTo(canvas.width, canvas.height); ctx.fill();
-        
-        if (gameState === 'DRAWING') {
-            ctx.strokeStyle = 'rgba(255,255,255,0.3)'; ctx.setLineDash([5, 5]);
-            ctx.beginPath(); ctx.moveTo(400, 0); ctx.lineTo(400, canvas.height); ctx.stroke(); ctx.setLineDash([]);
+        // Fundo
+        if (bgImage.complete) {
+            ctx.drawImage(bgImage, 0, 0, WORLD_W, canvas.height);
+        } else {
+            ctx.fillStyle = '#87CEEB';
+            ctx.fillRect(0, 0, WORLD_W, canvas.height);
         }
 
-        drawNamesUI();
+        // Poças de Sangue
+        bloodPuddles.forEach(b => {
+            let gy = terrain[Math.floor(b.x)];
+            ctx.fillStyle = 'rgba(150, 0, 0, 0.8)';
+            ctx.beginPath();
+            ctx.ellipse(b.x, gy, 15, 5, 0, 0, Math.PI * 2);
+            ctx.fill();
+        });
 
+        // Terreno
+        ctx.fillStyle = '#2e8b57';
+        ctx.beginPath(); ctx.moveTo(0, canvas.height);
+        for (let x = 0; x < WORLD_W; x++) ctx.lineTo(x, terrain[x]);
+        ctx.lineTo(WORLD_W, canvas.height); ctx.fill();
+        
+        // Caixa de Item
+        if (activeBox) {
+            ctx.save();
+            ctx.translate(activeBox.x, activeBox.y);
+            if (activeBox.type === 'REVIVE') {
+                ctx.fillStyle = (Math.floor(Date.now() / 150) % 2) ? '#ffffaa' : '#ffffff'; 
+            } else {
+                ctx.fillStyle = '#ffaa00';
+            }
+            ctx.fillRect(-12, -12, 24, 24);
+            ctx.strokeStyle = '#fff';
+            ctx.lineWidth = 2;
+            ctx.strokeRect(-12, -12, 24, 24);
+            ctx.fillStyle = '#000';
+            ctx.font = 'bold 12px sans-serif';
+            ctx.textAlign = 'center';
+            ctx.textBaseline = 'middle';
+            let txt = activeBox.type === 'REVIVE' ? '💖' : activeBox.type;
+            ctx.fillText(txt, 0, 0);
+            ctx.restore();
+        }
+
+        // Guias de Tiro
         if (gameState === 'PLAYING' && !actionInProgress) {
             let p = players[currentPlayerIndex];
             if (p && p.team === 0) {
@@ -437,7 +734,7 @@
                     ctx.stroke();
                 }
 
-                if (savedAim && currentAction === 'SHOOT' && !isMouseDown) {
+                if (savedAim && currentAction === 'SHOOT' && !isDraggingJoy) {
                     ctx.strokeStyle = 'rgba(255, 255, 0, 0.5)';
                     ctx.lineWidth = 2;
                     ctx.setLineDash([5, 5]); 
@@ -450,26 +747,64 @@
             }
         }
 
+        // Soldados
         players.forEach((p, index) => {
             if (!p || !p.alive) return;
             drawSoldier(p.x, p.y, p.team, (gameState === 'PLAYING' && index === currentPlayerIndex && !actionInProgress));
         });
 
-        if (gameState === 'PLAYING' && isMouseDown && currentAction === 'SHOOT' && players[currentPlayerIndex].team === 0 && !actionInProgress) {
+        // Desenhar Fantasmas Subindo ao Céu
+        ghosts.forEach(g => {
+            ctx.save();
+            ctx.globalAlpha = (g.life / g.maxLife) * 0.8; // Transparência gradual
+            ctx.translate(g.x, g.y);
+            
+            // Corpo do Fantasma
+            ctx.fillStyle = 'rgba(220, 240, 255, 0.9)';
+            ctx.beginPath();
+            ctx.arc(0, -15, 8, Math.PI, 0); 
+            ctx.lineTo(8, 0);
+            ctx.lineTo(5, -3);
+            ctx.lineTo(2, 0);
+            ctx.lineTo(-2, -3);
+            ctx.lineTo(-5, 0);
+            ctx.lineTo(-8, -3);
+            ctx.closePath();
+            ctx.fill();
+
+            // Olhinhos e Boca
+            ctx.fillStyle = 'black';
+            ctx.fillRect(-4, -18, 2, 2);
+            ctx.fillRect(2, -18, 2, 2);
+            ctx.fillRect(-1, -13, 2, 3);
+            
+            ctx.restore();
+        });
+
+        // Mira atual do Joystick
+        if (gameState === 'PLAYING' && isDraggingJoy && currentAction === 'SHOOT' && players[currentPlayerIndex].team === 0 && !actionInProgress && !isCancelingJoy) {
             let p = players[currentPlayerIndex];
-            ctx.strokeStyle = 'rgba(255, 255, 255, 0.8)'; 
+            
+            let aimColor = getAimColor(p, joyAimDx, joyAimDy);
+
+            ctx.strokeStyle = aimColor; 
             ctx.lineWidth = 2;
-            ctx.beginPath(); ctx.moveTo(p.x, p.y - 15);
-            ctx.lineTo(p.x + (aimStartX - aimEndX), p.y - 15 + (aimStartY - aimEndY));
+            ctx.beginPath(); 
+            ctx.moveTo(p.x, p.y - 15);
+            ctx.lineTo(p.x + (-joyAimDx * 3.5), p.y - 15 + (-joyAimDy * 3.5));
             ctx.stroke();
         }
 
         if (projectile) drawMissile(projectile.x, projectile.y, projectile.vx, projectile.vy);
 
+        // Explosões e Fumaça
         explosions.forEach(exp => {
             if (exp.type === 'smoke') {
                 ctx.fillStyle = `rgba(200, 200, 200, ${exp.life / 10})`;
                 ctx.beginPath(); ctx.arc(exp.x, exp.y, exp.radius, 0, Math.PI * 2); ctx.fill();
+            } else if (exp.type === 'sparkle') {
+                ctx.fillStyle = `rgba(255, 255, 100, ${exp.life / 25})`;
+                ctx.beginPath(); ctx.arc(exp.x, exp.y, exp.radius * (1 - exp.life/25) + 10, 0, Math.PI * 2); ctx.fill();
             } else {
                 ctx.fillStyle = `rgba(255, ${80 + exp.life * 5}, 0, ${exp.life / 25})`;
                 ctx.beginPath();
@@ -478,45 +813,52 @@
             }
         });
 
-        // Desenha Feed de Abates na tela
-        killMessages.forEach((msg, idx) => {
-            let opacity = msg.life > 30 ? 1 : msg.life / 30; // Começa a sumir nos últimos frames
-            ctx.font = "bold 16px Courier New";
-            ctx.textAlign = "center";
-            ctx.lineWidth = 3;
-            // Contorno preto
-            ctx.strokeStyle = `rgba(0, 0, 0, ${opacity})`;
-            ctx.strokeText(msg.text, canvas.width / 2, 50 + (idx * 22));
-            // Texto branco
-            ctx.fillStyle = `rgba(255, 255, 255, ${opacity})`;
-            ctx.fillText(msg.text, canvas.width / 2, 50 + (idx * 22));
+        // Balões de Deboche
+        players.forEach(p => {
+            if (p && p.alive && p.taunt && p.taunt.life > 0) {
+                drawBalloon(p.x, p.y - 35, p.taunt.text);
+            }
         });
+
+        drawNamesUI();
+        ctx.restore();
+    }
+
+    function drawBalloon(x, y, text) {
+        ctx.save();
+        ctx.translate(x, y);
+        ctx.font = "bold 13px 'Courier New', monospace";
+        let w = ctx.measureText(text).width + 16;
+        
+        ctx.fillStyle = "white";
+        ctx.fillRect(-w/2, -26, w, 26);
+        ctx.fillRect(-2, 0, 4, 8);
+        
+        ctx.fillStyle = "black";
+        ctx.textAlign = "center";
+        ctx.textBaseline = "middle";
+        ctx.fillText(text, 0, -13);
+        ctx.restore();
     }
 
     function drawNamesUI() {
         ctx.font = "bold 12px Courier New";
         ctx.textAlign = "center";
         ctx.textBaseline = "top";
-        
         for(let i = 0; i < 3; i++) {
             let p = players[i * 2];
             if (p) {
                 ctx.fillStyle = p.alive ? '#ffffff' : '#ff4444';
-                ctx.fillText(p.name, 100 + (i * 90), 10);
+                ctx.fillText(p.name, 100 + (i * 90), 20);
             }
         }
         for(let i = 0; i < 3; i++) {
             let p = players[i * 2 + 1];
             if (p) {
                 ctx.fillStyle = p.alive ? '#ffffff' : '#ff4444';
-                ctx.fillText(p.name, 500 + (i * 90), 10);
+                ctx.fillText(p.name, 500 + (i * 90), 20);
             }
         }
-    }
-
-    function drawCloudShape(x, y, r) {
-        ctx.beginPath(); ctx.arc(x, y, r, 0, Math.PI * 2); ctx.arc(x + r*0.6, y - r*0.3, r*0.8, 0, Math.PI * 2);
-        ctx.arc(x + r*1.2, y, r*0.6, 0, Math.PI * 2); ctx.arc(x + r*0.6, y + r*0.3, r*0.5, 0, Math.PI * 2); ctx.fill();
     }
 
     function drawSoldier(x, y, team, isActive) {
@@ -551,37 +893,34 @@
         let clientY = e.touches ? e.touches[0].clientY : e.clientY;
         let scaleX = canvas.width / rect.width;
         let scaleY = canvas.height / rect.height;
-        return { x: (clientX - rect.left) * scaleX, y: (clientY - rect.top) * scaleY };
+        return { 
+            x: ((clientX - rect.left) * scaleX) + cameraX, 
+            y: (clientY - rect.top) * scaleY 
+        };
     }
 
     function handleStart(e) {
-        if (e.target.tagName === 'BUTTON') return; 
-        if (e.touches && e.touches.length > 1) return;
+        if (e.target.tagName === 'BUTTON' || e.target.id.includes('joy')) return; 
         
         forceFullScreen(); 
-
         let pos = getEventPos(e);
 
         if (gameState === 'DRAWING') {
             isMouseDown = true; lastMouseX = pos.x; lastMouseY = pos.y; drawTerrainAt(pos.x, pos.y);
         } else if (gameState === 'PLACING') {
-            if (pos.x > 400) { modalText.innerHTML = "Toque na ESQUERDA!"; return; }
-            players[placedFriends * 2] = { name: matchNames[placedFriends], x: pos.x, y: terrain[Math.floor(pos.x)], vx: 0, vy: 0, team: 0, alive: true };
+            if (pos.x > 400) { modalText.innerHTML = "Toque na SUA Tela!"; return; }
+            players[placedFriends * 2] = { name: matchNames[placedFriends], x: pos.x, y: terrain[Math.floor(pos.x)], vx: 0, vy: 0, team: 0, alive: true, taunt: null };
             placedFriends++;
             
             if (placedFriends >= 3) { 
                 placeBots(); startCombat(); 
             } else {
-                modalText.innerHTML = `FASE 2: Posicione seus soldados! (Restam ${3 - placedFriends})`;
+                modalText.innerHTML = `Posicione seus soldados! (Restam ${3 - placedFriends})`;
             }
         } else if (gameState === 'PLAYING' && !actionInProgress) {
             let p = players[currentPlayerIndex];
-            if (p.team === 0) {
-                if (currentAction === 'SHOOT') {
-                    isMouseDown = true; aimStartX = pos.x; aimStartY = pos.y; aimEndX = pos.x; aimEndY = pos.y;
-                } else if (currentAction === 'JUMP') {
-                    executeJump(pos.x > p.x ? 1 : -1);
-                }
+            if (p.team === 0 && currentAction === 'JUMP') {
+                executeJump(pos.x > p.x ? 1 : -1);
             }
         }
     }
@@ -592,43 +931,34 @@
         if (gameState === 'DRAWING') {
             drawTerrainLine(lastMouseX, lastMouseY, pos.x, pos.y);
             lastMouseX = pos.x; lastMouseY = pos.y;
-        } else if (gameState === 'PLAYING' && currentAction === 'SHOOT') {
-            aimEndX = pos.x; aimEndY = pos.y;
         }
     }
 
     function handleEnd(e) {
-        if (gameState === 'PLAYING' && isMouseDown && currentAction === 'SHOOT' && !actionInProgress) {
-            let dx = aimStartX - aimEndX;
-            let dy = aimStartY - aimEndY;
-            if (Math.abs(dx) > 5 || Math.abs(dy) > 5) {
-                executeShoot(dx * 0.1, dy * 0.1, dx, dy);
-            }
-        }
         isMouseDown = false; lastMouseX = -1;
     }
 
     canvas.addEventListener('mousedown', handleStart);
     canvas.addEventListener('mousemove', handleMove);
     canvas.addEventListener('mouseup', handleEnd);
-    canvas.addEventListener('touchstart', (e) => { if(e.target.tagName !== 'BUTTON') e.preventDefault(); handleStart(e); }, {passive: false});
-    canvas.addEventListener('touchmove', (e) => { if(e.target.tagName !== 'BUTTON') e.preventDefault(); handleMove(e); }, {passive: false});
-    canvas.addEventListener('touchend', (e) => { if(e.target.tagName !== 'BUTTON') e.preventDefault(); handleEnd(e); }, {passive: false});
+    canvas.addEventListener('touchstart', (e) => { if(e.target.tagName !== 'BUTTON' && !e.target.id.includes('joy')) { e.preventDefault(); handleStart(e); } }, {passive: false});
+    canvas.addEventListener('touchmove', (e) => { if(e.target.tagName !== 'BUTTON' && !e.target.id.includes('joy')) { e.preventDefault(); handleMove(e); } }, {passive: false});
+    canvas.addEventListener('touchend', (e) => { if(e.target.tagName !== 'BUTTON' && !e.target.id.includes('joy')) { e.preventDefault(); handleEnd(e); } }, {passive: false});
 
     function nextPhase() {
         forceFullScreen(); 
+        cameraX = 0; 
         if (gameState === 'DRAWING') {
             gameState = 'PLACING';
-            modalText.innerHTML = "FASE 2: Posicione 3 soldados na ESQUERDA!";
+            modalText.innerHTML = "Posicione seus 3 soldados!";
             btnAction.style.display = 'none';
-            statusText.innerText = "Preparação: Soldados";
         }
     }
 
     function placeBots() {
         for (let i = 0; i < 3; i++) {
-            let bx = 500 + Math.random() * 250;
-            players[i * 2 + 1] = { name: matchNames[3 + i], x: bx, y: terrain[Math.floor(bx)], vx: 0, vy: 0, team: 1, alive: true };
+            let bx = 450 + Math.random() * 300;
+            players[i * 2 + 1] = { name: matchNames[3 + i], x: bx, y: terrain[Math.floor(bx)], vx: 0, vy: 0, team: 1, alive: true, taunt: null };
         }
     }
 
@@ -641,7 +971,7 @@
 
     function resetGame() {
         forceFullScreen(); 
-        ctx.fillStyle = 'white'; ctx.fillRect(0, 0, canvas.width, canvas.height);
+        ctx.fillStyle = 'black'; ctx.fillRect(0, 0, canvas.width, canvas.height);
         setTimeout(initGame, 50);
     }
 
@@ -652,11 +982,14 @@
         savedAim = null;      
         let p = players[currentPlayerIndex];
         
+        cameraX = (p.x < SCREEN_W) ? 0 : 400;
+
         if (p.team === 0) {
-            actionButtons.style.display = 'flex';
+            actionArea.style.display = 'flex';
             setAction('SHOOT');
         } else {
-            actionButtons.style.display = 'none';
+            actionArea.style.display = 'none';
+            joystickZone.style.display = 'none';
             setTimeout(botAI, 1000);
         }
         updateStatusText();
@@ -665,7 +998,7 @@
     function updateStatusText() {
         if (gameState !== 'PLAYING') return;
         let p = players[currentPlayerIndex];
-        statusText.innerText = `Turno: ${p.name} (${actionsLeft}/2)`;
+        statusText.innerText = `Turno: ${p.name} (${actionsLeft} Ações)`;
     }
 
     function executeJump(direction) {
@@ -689,8 +1022,12 @@
         projectile = { x: p.x, y: p.y - 15, vx: vx, vy: vy };
         
         playShootSound(); 
-        
         for(let i=0; i<5; i++) explosions.push({ x: p.x + (Math.random()-0.5)*10, y: p.y - 15 + (Math.random()-0.5)*10, radius: 3, life: 15, type: 'smoke' });
+        
+        shotsUntilDrop--;
+        if (shotsUntilDrop <= 0 && !activeBox) {
+            spawnBox();
+        }
     }
 
     function triggerExplosion(ex, ey) {
@@ -699,14 +1036,16 @@
         const radius = 30;
         explosions.push({ x: ex, y: ey, radius: radius, life: 25, type: 'explosion' });
         
-        // Identifica o atirador antes de deformar e matar
         let shooterName = players[currentPlayerIndex] ? players[currentPlayerIndex].name : "Fantasma";
+        let killedSomeone = false;
+
+        let maxDepth = canvas.height - 245; 
 
         for (let x = Math.floor(ex - radius); x <= Math.floor(ex + radius); x++) {
-            if (x >= 0 && x < canvas.width) {
+            if (x >= 0 && x < WORLD_W) {
                 let dx = x - ex; let dy = Math.sqrt(radius * radius - dx * dx);
                 terrain[x] = Math.max(terrain[x], ey + dy);
-                if (terrain[x] > canvas.height - 10) terrain[x] = canvas.height - 10;
+                if (terrain[x] > maxDepth) terrain[x] = maxDepth;
             }
         }
 
@@ -715,17 +1054,26 @@
                 let dist = Math.hypot(p.x - ex, p.y - ey);
                 if (dist <= radius + 5) {
                     p.alive = false;
+                    killedSomeone = true;
                     
-                    // Adiciona mensagem de quem matou quem
-                    addKillMessage(shooterName, p.name);
-
+                    // Sangue e Fantasma
+                    bloodPuddles.push({ x: p.x });
+                    ghosts.push({ x: p.x, y: p.y - 10, life: 150, maxLife: 150 });
+                    
+                    showDramaticMessage(`${shooterName}\nELIMINOU\n${p.name}!`, '#ff3333');
                     for(let i=0; i<8; i++) explosions.push({ x: p.x, y: p.y - 10, radius: 4, life: 20, type: 'smoke' });
                 }
             }
         });
 
+        let delay = 1000;
+        if (!killedSomeone) {
+            let hasTaunt = triggerMissTaunt(ex, ey);
+            if(hasTaunt) delay = 4000; 
+        }
+
         checkWinCondition();
-        if (gameState === 'PLAYING') setTimeout(finishAction, 1000); 
+        if (gameState === 'PLAYING') setTimeout(finishAction, delay); 
     }
 
     function finishAction() {
@@ -738,6 +1086,9 @@
             nextTurn();
         } else {
             actionInProgress = false;
+            let p = players[currentPlayerIndex];
+            cameraX = (p.x < SCREEN_W) ? 0 : 400;
+
             if (players[currentPlayerIndex].team === 1) setTimeout(botAI, 800);
         }
     }
@@ -764,7 +1115,7 @@
         targets.sort((a, b) => Math.abs(a.x - bot.x) - Math.abs(b.x - bot.x));
         let target = targets[0];
         
-        if (actionsLeft === 2 && Math.random() < 0.3) {
+        if (actionsLeft >= 2 && Math.random() < 0.3) {
             let dist = target.x - bot.x;
             let dir = dist > 0 ? 1 : -1;
             if (Math.abs(dist) < 100) dir *= -1; 
@@ -788,38 +1139,28 @@
 
         if (botsAlive === 0 && friendsAlive > 0) { 
             gameState = 'GAME_OVER'; 
-            statusText.innerText = "🏆 FIM DE JOGO!"; 
-            actionButtons.style.display = 'none'; 
+            actionArea.style.display = 'none'; 
+            joystickZone.style.display = 'none';
             
-            // Pega os nomes de quem formou o time vencedor
             let vencedores = players.filter(p => p && p.team === 0).map(p => p.name).join('<br>');
             centerModal.style.display = 'flex';
-            modalText.innerHTML = `<span style="color:#aaffaa; font-size: 26px;">🏆 VITÓRIA DOS ALIADOS! 🏆</span><br><br><span style="font-size: 16px;">Time Vencedor:</span><br><span style="color:#fff">${vencedores}</span>`;
-            
+            modalText.innerHTML = `<span style="color:#aaffaa; font-size: 20px;">🏆 VITÓRIA!</span><br><br><span style="font-size: 14px;">Vencedores:</span><br><span style="color:#fff">${vencedores}</span>`;
         }
         else if (friendsAlive === 0 && botsAlive > 0) { 
             gameState = 'GAME_OVER'; 
-            statusText.innerText = "💀 FIM DE JOGO!"; 
-            actionButtons.style.display = 'none'; 
+            actionArea.style.display = 'none'; 
+            joystickZone.style.display = 'none';
             
             let vencedores = players.filter(p => p && p.team === 1).map(p => p.name).join('<br>');
             centerModal.style.display = 'flex';
-            modalText.innerHTML = `<span style="color:#ff4444; font-size: 26px;">💀 VITÓRIA DOS INIMIGOS! 💀</span><br><br><span style="font-size: 16px;">Time Vencedor:</span><br><span style="color:#fff">${vencedores}</span>`;
-            
-        }
-        else if (friendsAlive === 0 && botsAlive === 0) { 
-            gameState = 'GAME_OVER'; 
-            statusText.innerText = "🤝 FIM DE JOGO!"; 
-            actionButtons.style.display = 'none'; 
-            
-            centerModal.style.display = 'flex';
-            modalText.innerHTML = `<span style="color:#ffffaa; font-size: 26px;">🤝 EMPATE! 🤝</span><br><br><span style="font-size: 16px; color: #ccc;">Ninguém sobreviveu.</span>`;
+            modalText.innerHTML = `<span style="color:#ff4444; font-size: 20px;">💀 DERROTA!</span><br><br><span style="font-size: 14px;">Vencedores:</span><br><span style="color:#fff">${vencedores}</span>`;
         }
     }
 
     function drawTerrainAt(x, y) {
-        if (x < 0) x = 0; if (x > 399) x = 399;
-        terrain[x] = y; terrain[799 - x] = y;
+        if (x < 0) x = 0; if (x > 399) x = 399; 
+        terrain[x] = y; 
+        terrain[799 - x] = y; 
     }
 
     function drawTerrainLine(x1, y1, x2, y2) {
