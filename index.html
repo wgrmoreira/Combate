@@ -9,7 +9,7 @@
     <title>Combate!</title>
     <style>
         body {
-            background-color: #111; 
+            background-color: #000; 
             color: #fff;
             font-family: sans-serif; 
             text-align: center;
@@ -30,12 +30,50 @@
         }
         canvas {
             background-color: transparent;
-            image-rendering: pixelated; /* Garante que o desenho não borre (fique pixelado) */
+            image-rendering: pixelated; 
             width: 100%;
             height: 100%;
             object-fit: cover;
             aspect-ratio: 400 / 700;
         }
+
+        /* --- TELA INICIAL (START SCREEN) --- */
+        #start-screen {
+            position: absolute;
+            top: 0; left: 0; width: 100%; height: 100%;
+            background: #0a0a0a;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            z-index: 1000;
+        }
+        .game-title {
+            font-size: 50px;
+            font-weight: 900;
+            color: #d4af37;
+            text-transform: uppercase;
+            letter-spacing: 5px;
+            margin-bottom: 40px;
+            text-shadow: 0 0 20px rgba(212, 175, 55, 0.5);
+        }
+        .combat-symbol {
+            margin-bottom: 20px;
+        }
+        .btn-start {
+            background: #fff;
+            color: #000;
+            border: none;
+            padding: 15px 40px;
+            font-size: 18px;
+            font-weight: bold;
+            cursor: pointer;
+            border-radius: 30px;
+            transition: transform 0.1s;
+            box-shadow: 0 4px 15px rgba(255,255,255,0.2);
+            letter-spacing: 1px;
+        }
+        .btn-start:active { transform: translateY(3px) scale(0.95); }
 
         /* --- MENSAGENS CENTRAIS --- */
         #center-modal {
@@ -43,7 +81,7 @@
             top: 15%; 
             left: 50%;
             transform: translate(-50%, -50%);
-            display: flex;
+            display: none; /* Só aparece quando o jogo inicia */
             flex-direction: column;
             align-items: center;
             pointer-events: none; 
@@ -113,7 +151,7 @@
             height: 240px; 
             background: rgba(15, 15, 15, 0.98);
             border-top: 1px solid rgba(255,255,255,0.1);
-            display: flex;
+            display: none; /* Controlado via JS */
             flex-direction: column;
             align-items: center;
             padding: 15px 20px;
@@ -193,6 +231,24 @@
 </head>
 <body>
 
+    <!-- TELA INICIAL -->
+    <div id="start-screen">
+        <div class="combat-symbol">
+            <!-- Símbolo Minimalista de Mira/Combate -->
+            <svg width="100" height="100" viewBox="0 0 100 100" fill="none" stroke="#d4af37" stroke-width="4" stroke-linecap="round">
+                <circle cx="50" cy="50" r="40"/>
+                <line x1="50" y1="0" x2="50" y2="25"/>
+                <line x1="50" y1="100" x2="50" y2="75"/>
+                <line x1="0" y1="50" x2="25" y2="50"/>
+                <line x1="100" y1="50" x2="75" y2="50"/>
+                <circle cx="50" cy="50" r="5" fill="#d4af37"/>
+            </svg>
+        </div>
+        <div class="game-title">COMBATE!</div>
+        <button class="btn-start" onclick="initGame()">INICIAR JOGO</button>
+    </div>
+
+    <!-- TELA DO JOGO -->
     <div id="game-container">
         <canvas id="gameCanvas" width="400" height="700"></canvas>
         
@@ -206,7 +262,7 @@
         <div id="bottom-bar">
             <div class="row-ui">
                 <span id="status-text">Terreno</span>
-                <button class="minimal-btn danger" onclick="resetGame()">Reiniciar</button>
+                <button class="minimal-btn danger" onclick="showStartScreen()">Sair</button>
             </div>
             
             <div class="row-ui" id="action-area" style="display:none;">
@@ -229,9 +285,11 @@
     const ctx = canvas.getContext('2d');
     
     // UI Elements
+    const startScreen = document.getElementById('start-screen');
     const centerModal = document.getElementById('center-modal');
     const modalText = document.getElementById('modal-text');
     const btnAction = document.getElementById('btn-action');
+    const bottomBar = document.getElementById('bottom-bar');
     const statusText = document.getElementById('status-text');
     const actionArea = document.getElementById('action-area');
     const btnShoot = document.getElementById('btn-shoot');
@@ -241,12 +299,16 @@
     const joystickKnob = document.getElementById('joystick-knob');
     const joyCancel = document.getElementById('joy-cancel');
 
-    // Imagem de Fundo (Sistema Aleatório)
     const BGS = ['assets/img/fundo.png', 'assets/img/fundo2.png', 'assets/img/fundo3.png', 'assets/img/fundo4.png'];
     const bgImage = new Image();
-    let terrainColor = '#1c5e20'; // Grama escura realista
+    let terrainColor = '#1c5e20'; 
     
-    const ALL_NAMES = ["Morg", "Vitor", "Wagner", "V", "CAP", "Cleber", "nomaR", "Will", "Coronel", "Master", "DAI", "Lutika", "Drih"];
+    const ALL_NAMES = [
+        "Morg", "Vitor", "Wagner", "V", "CAP", "Cleber", "nomaR", "Will", "Coronel", 
+        "Master", "DAI", "Lutika", "Drih", "Edson", "GUI Aranha", "Gabriel", "Fred", 
+        "Lurmito", "Odyssay"
+    ];
+
     const TAUNTS = [
         "HAHAHA!", "ERROU!", "VC É RUIM!", "FRACO!", 
         "NUNCA ME PEGARÁ!", "PASSOU LONGE!", "PRECISA DE ÓCULOS?", 
@@ -257,7 +319,7 @@
     const WORLD_W = 800;
     let cameraX = 0; 
 
-    let gameState;
+    let gameState = 'START_SCREEN';
     let terrain;
     let players;
     let currentPlayerIndex;
@@ -275,12 +337,12 @@
     let isMouseDown = false;
     let lastMouseX = -1, lastMouseY = -1;
     
-    // Efeitos e Drops
     let projectile = null;
     let explosions = [];
     let bloodPuddles = []; 
     let ghosts = []; 
-    let activeBox = null;
+    let victoryBots = []; 
+    let activeBoxes = []; // Agora suporta múltiplas caixas
     let shotsUntilDrop = 5;
 
     let placedFriends = 0;
@@ -317,11 +379,8 @@
         let buffer = audioCtx.createBuffer(1, bufferSize, audioCtx.sampleRate);
         let data = buffer.getChannelData(0);
         for (let i = 0; i < bufferSize; i++) data[i] = Math.random() * 2 - 1; 
-        
-        let noise = audioCtx.createBufferSource();
-        noise.buffer = buffer;
-        let filter = audioCtx.createBiquadFilter();
-        filter.type = 'lowpass';
+        let noise = audioCtx.createBufferSource(); noise.buffer = buffer;
+        let filter = audioCtx.createBiquadFilter(); filter.type = 'lowpass';
         filter.frequency.setValueAtTime(800, audioCtx.currentTime);
         filter.frequency.linearRampToValueAtTime(100, audioCtx.currentTime + 0.8);
         let gain = audioCtx.createGain();
@@ -360,6 +419,23 @@
         osc.start(); osc.stop(audioCtx.currentTime + 2.5);
     }
 
+    function playVictorySound() {
+        if (!audioCtx) return;
+        let osc = audioCtx.createOscillator();
+        let gain = audioCtx.createGain();
+        osc.type = 'square';
+        let now = audioCtx.currentTime;
+        osc.frequency.setValueAtTime(261.63, now); 
+        osc.frequency.setValueAtTime(329.63, now + 0.15); 
+        osc.frequency.setValueAtTime(392.00, now + 0.3); 
+        osc.frequency.setValueAtTime(523.25, now + 0.45); 
+        gain.gain.setValueAtTime(0.3, now);
+        gain.gain.setValueAtTime(0.3, now + 0.6);
+        gain.gain.exponentialRampToValueAtTime(0.01, now + 1.2);
+        osc.connect(gain); gain.connect(audioCtx.destination);
+        osc.start(now); osc.stop(now + 1.2);
+    }
+
     function forceFullScreen() {
         initAudio(); 
         let elem = document.documentElement;
@@ -384,17 +460,23 @@
         cameraX = cameraX === 0 ? 400 : 0;
     }
 
+    function showStartScreen() {
+        gameState = 'START_SCREEN';
+        startScreen.style.display = 'flex';
+        centerModal.style.display = 'none';
+        bottomBar.style.display = 'none';
+        dramaticKill.style.display = 'none';
+    }
+
     function initGame() {
-        // Seleção do Fundo Aleatório e Cor da Terra
+        forceFullScreen();
+        startScreen.style.display = 'none';
+        bottomBar.style.display = 'flex';
+
         let currentBgSrc = BGS[Math.floor(Math.random() * BGS.length)];
         bgImage.src = currentBgSrc;
-        
-        // Se for fundo2, cor simbolizando Terra. Senão, verde grama escuro
-        if(currentBgSrc.includes('fundo2')) {
-            terrainColor = '#5c4033'; // Marrom Terra
-        } else {
-            terrainColor = '#1c5e20'; // Verde Realista Escuro
-        }
+        if(currentBgSrc.includes('fundo2')) terrainColor = '#5c4033'; 
+        else terrainColor = '#1c5e20'; 
 
         gameState = 'DRAWING';
         terrain = new Array(WORLD_W).fill(canvas.height - 350); 
@@ -409,7 +491,8 @@
         explosions = [];
         bloodPuddles = [];
         ghosts = [];
-        activeBox = null;
+        victoryBots = [];
+        activeBoxes = [];
         shotsUntilDrop = 5;
         
         currentTrajectory = [];
@@ -422,7 +505,6 @@
         centerModal.style.display = 'flex';
         modalText.innerHTML = "Desenhe o terreno com o dedo da esquerda para a direita";
         btnAction.style.display = 'inline-block';
-        dramaticKill.style.display = 'none';
         
         statusText.innerText = "Fase 1 - Terreno";
         actionArea.style.display = 'none';
@@ -505,33 +587,39 @@
     document.addEventListener('touchmove', handleJoyMove, {passive: false});
     document.addEventListener('touchend', handleJoyEnd, {passive: false});
 
-    // --- LÓGICA DE CAIXAS (DROPS) ---
-    function spawnBox() {
-        let type = Math.random() < 0.6 ? 'SUPERBOMBA' : 'VIDA';
-        let bx = 50 + Math.random() * 700;
-        activeBox = { x: bx, y: -50, falling: true, type: type }; // Nasce no céu
+    // --- LÓGICA DE CAIXAS (DROPS DUPLOS) ---
+    function spawnBoxes() {
+        let type1 = Math.random() < 0.5 ? 'SUPERBOMBA' : 'VIDA';
+        let type2 = Math.random() < 0.5 ? 'SUPERBOMBA' : 'VIDA';
+        // Uma em cada lado da tela
+        activeBoxes.push({ x: 50 + Math.random() * 300, y: -50, falling: true, type: type1 });
+        activeBoxes.push({ x: 450 + Math.random() * 300, y: -50, falling: true, type: type2 });
     }
 
     function checkBoxCollision() {
-        if (!activeBox || activeBox.falling) return; // Só pega quando tocar no chão
-        players.forEach(p => {
-            if (p && p.alive) {
-                if (Math.hypot(p.x - activeBox.x, p.y - activeBox.y) < 25) {
-                    openBox(p);
+        for (let i = activeBoxes.length - 1; i >= 0; i--) {
+            let box = activeBoxes[i];
+            if (box.falling) continue; 
+
+            players.forEach(p => {
+                if (p && p.alive && activeBoxes[i] === box) {
+                    if (Math.hypot(p.x - box.x, p.y - box.y) < 20) {
+                        openBox(p, i);
+                    }
                 }
-            }
-        });
+            });
+        }
     }
 
-    function openBox(p) {
-        if (!activeBox) return;
-        let t = activeBox.type;
+    function openBox(p, index) {
+        let box = activeBoxes[index];
+        let t = box.type;
         playPowerupSound();
         
         if (t === 'SUPERBOMBA') {
             if (p.team === players[currentPlayerIndex].team) {
                 actionsLeft += 1;
-                p.hasSuperBomb = true; // Flag para a super explosão
+                p.hasSuperBomb = true; 
                 showDramaticMessage(`${p.name}\nPEGOU SUPERBOMBA!\n+1 Ação`, '#ffaa00');
             }
         } else if (t === 'VIDA') {
@@ -539,8 +627,8 @@
             if (deadAllies.length > 0) {
                 let revived = deadAllies[Math.floor(Math.random() * deadAllies.length)];
                 revived.alive = true;
-                revived.x = activeBox.x;
-                revived.y = activeBox.y - 5;
+                revived.x = box.x;
+                revived.y = box.y - 5;
                 revived.vx = 0; revived.vy = 0;
                 showDramaticMessage(`${revived.name} REVIVEU!`, '#ffffaa');
             } else {
@@ -548,60 +636,35 @@
             }
         }
         
-        explosions.push({ x: activeBox.x, y: activeBox.y, radius: 25, life: 25, type: 'sparkle' });
-        activeBox = null;
+        explosions.push({ x: box.x, y: box.y, radius: 25, life: 25, type: 'sparkle' });
+        activeBoxes.splice(index, 1);
         shotsUntilDrop = 3;
         updateStatusText();
-    }
-
-    // --- SIMULADOR DE MIRA (Trajetória Predita) ---
-    function getAimColor(p, joyDx, joyDy) {
-        let simX = p.x;
-        let simY = p.y - 15;
-        let simVx = (-joyDx * 3.5) * 0.1;
-        let simVy = (-joyDy * 3.5) * 0.1;
-        
-        let steps = 0;
-        let maxSteps = 400;
-
-        while (steps < maxSteps) {
-            simX += simVx;
-            simY += simVy;
-            simVy += 0.15; 
-
-            if (simX < 0 || simX >= WORLD_W || simY > canvas.height + 50) return 'rgba(255, 51, 51, 0.9)'; 
-
-            if (simY >= terrain[Math.floor(simX)]) {
-                if (simX < SCREEN_W) return 'rgba(255, 51, 51, 0.9)'; // Caiu no próprio campo = Vermelho
-                else return 'rgba(255, 255, 255, 0.9)'; // Inimigo = Branco
-            }
-            steps++;
-        }
-        return 'rgba(255, 51, 51, 0.9)'; 
     }
 
 
     // --- LOOP PRINCIPAL ---
     function gameLoop() {
-        update();
-        draw();
+        if (gameState !== 'START_SCREEN') {
+            update();
+            draw();
+        }
         requestAnimationFrame(gameLoop);
     }
 
     function update() {
-        // Atualiza a posição da caixa caindo
-        if (activeBox) {
-            let groundY = terrain[Math.floor(activeBox.x)];
-            if (activeBox.y < groundY - 12) {
-                activeBox.y += 1.5; // Cai lentamente
-                activeBox.falling = true;
+        // Atualiza a posição das caixas caindo (-30% tamanho)
+        activeBoxes.forEach(box => {
+            let groundY = terrain[Math.floor(box.x)];
+            if (box.y < groundY - 8) { // Centro da caixa nova
+                box.y += 1.5; 
+                box.falling = true;
             } else {
-                activeBox.y = groundY - 12;
-                activeBox.falling = false;
+                box.y = groundY - 8;
+                box.falling = false;
             }
-        }
+        });
 
-        // Fantasmas subindo ao céu
         ghosts.forEach(g => {
             g.y -= 1.5; 
             g.x += Math.sin(g.life * 0.1) * 0.5; 
@@ -649,7 +712,6 @@
                 }
 
                 if (projectile.x < 0 || projectile.x > WORLD_W || projectile.y > canvas.height + 50) {
-                    let wasSuper = projectile.isSuper;
                     saveAndClearProjectile();
                     let hasTaunt = triggerMissTaunt(-100, -100); 
                     setTimeout(finishAction, hasTaunt ? 4000 : 1000); 
@@ -662,6 +724,18 @@
 
             explosions.forEach(exp => exp.life--);
             explosions = explosions.filter(exp => exp.life > 0);
+        }
+
+        // Animação de Vitória
+        if (gameState === 'GAME_OVER') {
+            victoryBots.forEach(b => {
+                b.y += b.vy;
+                b.vy += 0.25; 
+                if (b.y >= b.groundY) {
+                    b.y = b.groundY;
+                    b.vy = -3 - Math.random() * 3; // Pula sem parar
+                }
+            });
         }
     }
 
@@ -686,76 +760,75 @@
         projectile = null;
     }
 
+    function drawGhost(x, y, alpha) {
+        ctx.save();
+        ctx.globalAlpha = alpha; 
+        ctx.translate(x, y);
+        ctx.fillStyle = 'rgba(220, 240, 255, 0.9)';
+        ctx.fillRect(-8, -15, 16, 12);
+        ctx.fillRect(-6, -18, 12, 3);
+        ctx.fillRect(-8, -3, 4, 3);
+        ctx.fillRect(-2, -3, 4, 3);
+        ctx.fillRect(4, -3, 4, 3);
+        ctx.fillStyle = 'black';
+        ctx.fillRect(-5, -12, 2, 2);
+        ctx.fillRect(3, -12, 2, 2);
+        ctx.fillRect(-2, -8, 4, 4);
+        ctx.restore();
+    }
+
     function draw() {
         ctx.clearRect(0, 0, canvas.width, canvas.height);
         ctx.save();
         ctx.translate(-cameraX, 0);
 
-        // Fundo
-        if (bgImage.complete) {
-            ctx.drawImage(bgImage, 0, 0, WORLD_W, canvas.height);
-        } else {
-            ctx.fillStyle = '#87CEEB';
-            ctx.fillRect(0, 0, WORLD_W, canvas.height);
-        }
+        if (bgImage.complete) ctx.drawImage(bgImage, 0, 0, WORLD_W, canvas.height);
+        else { ctx.fillStyle = '#87CEEB'; ctx.fillRect(0, 0, WORLD_W, canvas.height); }
 
-        // Poças de Sangue Pixeladas (no fundo)
         bloodPuddles.forEach(b => {
             let gy = terrain[Math.floor(b.x)];
             ctx.fillStyle = 'rgba(150, 0, 0, 0.8)';
-            ctx.fillRect(b.x - 15, gy - 2, 30, 4); // Pixelado
+            ctx.fillRect(b.x - 15, gy - 2, 30, 4); 
         });
 
-        // Terreno Dinâmico
         ctx.fillStyle = terrainColor;
         ctx.beginPath(); ctx.moveTo(0, canvas.height);
         for (let x = 0; x < WORLD_W; x++) ctx.lineTo(x, terrain[x]);
         ctx.lineTo(WORLD_W, canvas.height); ctx.fill();
         
-        // Caixa de Item
-        if (activeBox) {
+        // Desenha Caixas (-30% Tamanho)
+        activeBoxes.forEach(box => {
             ctx.save();
-            ctx.translate(activeBox.x, activeBox.y);
+            ctx.translate(box.x, box.y);
             
-            // Desenha Paraquedas se caindo
-            if (activeBox.falling) {
-                ctx.fillStyle = '#ffffff'; // Paraquedas branco
-                ctx.fillRect(-15, -35, 30, 10);
-                ctx.strokeStyle = '#fff';
-                ctx.lineWidth = 1;
+            if (box.falling) {
+                ctx.fillStyle = '#ffffff'; 
+                ctx.fillRect(-10, -25, 20, 7);
+                ctx.strokeStyle = '#fff'; ctx.lineWidth = 1;
                 ctx.beginPath();
-                ctx.moveTo(-15, -25); ctx.lineTo(-6, -12);
-                ctx.moveTo(15, -25); ctx.lineTo(6, -12);
+                ctx.moveTo(-10, -18); ctx.lineTo(-4, -8);
+                ctx.moveTo(10, -18); ctx.lineTo(4, -8);
                 ctx.stroke();
             }
 
-            // Caixa
-            if (activeBox.type === 'VIDA') {
-                ctx.fillStyle = (Math.floor(Date.now() / 150) % 2) ? '#ffffaa' : '#ffffff'; 
-            } else {
-                ctx.fillStyle = '#ffaa00';
-            }
-            ctx.fillRect(-12, -12, 24, 24);
-            ctx.strokeStyle = '#fff';
-            ctx.lineWidth = 2;
-            ctx.strokeRect(-12, -12, 24, 24);
-            ctx.fillStyle = '#000';
-            ctx.font = 'bold 16px sans-serif';
-            ctx.textAlign = 'center';
-            ctx.textBaseline = 'middle';
-            let txt = activeBox.type === 'VIDA' ? '❤' : 'S';
-            ctx.fillText(txt, 0, 0);
+            if (box.type === 'VIDA') ctx.fillStyle = (Math.floor(Date.now() / 150) % 2) ? '#ffffaa' : '#ffffff'; 
+            else ctx.fillStyle = '#ffaa00';
+            
+            // Caixa 16x16
+            ctx.fillRect(-8, -8, 16, 16);
+            ctx.strokeStyle = '#fff'; ctx.lineWidth = 1.5; ctx.strokeRect(-8, -8, 16, 16);
+            ctx.fillStyle = '#000'; ctx.font = 'bold 10px sans-serif'; ctx.textAlign = 'center'; ctx.textBaseline = 'middle';
+            let txt = box.type === 'VIDA' ? '❤' : 'S';
+            ctx.fillText(txt, 0, 1);
             ctx.restore();
-        }
+        });
 
-        // Guias de Tiro
         if (gameState === 'PLAYING' && !actionInProgress) {
             let p = players[currentPlayerIndex];
             if (p && p.team === 0) {
                 if (savedTrajectory.length > 0) {
                     ctx.strokeStyle = 'rgba(255, 255, 255, 0.4)';
-                    ctx.lineWidth = 1;
-                    ctx.beginPath();
+                    ctx.lineWidth = 1; ctx.beginPath();
                     ctx.moveTo(savedTrajectory[0].x, savedTrajectory[0].y);
                     for(let i=1; i<savedTrajectory.length; i++) ctx.lineTo(savedTrajectory[i].x, savedTrajectory[i].y);
                     ctx.stroke();
@@ -763,62 +836,44 @@
 
                 if (savedAim && currentAction === 'SHOOT' && !isDraggingJoy) {
                     ctx.strokeStyle = 'rgba(255, 255, 0, 0.5)';
-                    ctx.lineWidth = 2;
-                    ctx.setLineDash([5, 5]); 
-                    ctx.beginPath();
+                    ctx.lineWidth = 2; ctx.setLineDash([5, 5]); ctx.beginPath();
                     ctx.moveTo(p.x, p.y - 15);
                     ctx.lineTo(p.x + savedAim.dx, p.y - 15 + savedAim.dy);
-                    ctx.stroke();
-                    ctx.setLineDash([]);
+                    ctx.stroke(); ctx.setLineDash([]);
                 }
             }
         }
 
-        // Soldados
         players.forEach((p, index) => {
             if (!p || !p.alive) return;
             drawSoldier(p.x, p.y, p.team, (gameState === 'PLAYING' && index === currentPlayerIndex && !actionInProgress));
         });
 
-        // Desenhar Fantasmas Pixelados
-        ghosts.forEach(g => {
-            ctx.save();
-            ctx.globalAlpha = (g.life / g.maxLife) * 0.8; 
-            ctx.translate(g.x, g.y);
-            
-            ctx.fillStyle = 'rgba(220, 240, 255, 0.9)';
-            // Corpo fantasma quadriculado
-            ctx.fillRect(-8, -15, 16, 12);
-            ctx.fillRect(-6, -18, 12, 3);
-            // Tentaculos
-            ctx.fillRect(-8, -3, 4, 3);
-            ctx.fillRect(-2, -3, 4, 3);
-            ctx.fillRect(4, -3, 4, 3);
-            // Olhinhos e Boca Assustada
-            ctx.fillStyle = 'black';
-            ctx.fillRect(-5, -12, 2, 2);
-            ctx.fillRect(3, -12, 2, 2);
-            ctx.fillRect(-2, -8, 4, 4);
-            
-            ctx.restore();
-        });
+        // Desenhar Bots Vitoriosos pulando
+        if (gameState === 'GAME_OVER') {
+            victoryBots.forEach(b => {
+                if (b.isGhost) drawGhost(b.x, b.y, 0.9);
+                else drawSoldier(b.x, b.y, b.team, false);
+                
+                ctx.fillStyle = '#fff';
+                ctx.font = 'bold 16px Courier New';
+                ctx.textAlign = 'center';
+                ctx.fillText(b.name, b.x, b.y - 30);
+            });
+        }
 
-        // Mira atual do Joystick
+        ghosts.forEach(g => { drawGhost(g.x, g.y, (g.life / g.maxLife) * 0.8); });
+
         if (gameState === 'PLAYING' && isDraggingJoy && currentAction === 'SHOOT' && players[currentPlayerIndex].team === 0 && !actionInProgress && !isCancelingJoy) {
             let p = players[currentPlayerIndex];
             let aimColor = getAimColor(p, joyAimDx, joyAimDy);
-
-            ctx.strokeStyle = aimColor; 
-            ctx.lineWidth = 2;
-            ctx.beginPath(); 
-            ctx.moveTo(p.x, p.y - 15);
-            ctx.lineTo(p.x + (-joyAimDx * 3.5), p.y - 15 + (-joyAimDy * 3.5));
-            ctx.stroke();
+            ctx.strokeStyle = aimColor; ctx.lineWidth = 2;
+            ctx.beginPath(); ctx.moveTo(p.x, p.y - 15);
+            ctx.lineTo(p.x + (-joyAimDx * 3.5), p.y - 15 + (-joyAimDy * 3.5)); ctx.stroke();
         }
 
         if (projectile) drawMissile(projectile.x, projectile.y, projectile.vx, projectile.vy);
 
-        // Explosões e Fumaça em PIXEL ART (Usando Blocos em vez de círculos)
         explosions.forEach(exp => {
             let r = exp.radius;
             if (exp.type === 'smoke') {
@@ -835,53 +890,51 @@
             }
         });
 
-        // Balões de Deboche
         players.forEach(p => {
-            if (p && p.alive && p.taunt && p.taunt.life > 0) {
-                drawBalloon(p.x, p.y - 35, p.taunt.text);
-            }
+            if (p && p.alive && p.taunt && p.taunt.life > 0) drawBalloon(p.x, p.y - 35, p.taunt.text);
         });
 
         drawNamesUI();
         ctx.restore();
     }
 
+    function getAimColor(p, joyDx, joyDy) {
+        let simX = p.x; let simY = p.y - 15;
+        let simVx = (-joyDx * 3.5) * 0.1; let simVy = (-joyDy * 3.5) * 0.1;
+        let steps = 0; let maxSteps = 400;
+
+        while (steps < maxSteps) {
+            simX += simVx; simY += simVy; simVy += 0.15; 
+            if (simX < 0 || simX >= WORLD_W || simY > canvas.height + 50) return 'rgba(255, 51, 51, 0.9)'; 
+            if (simY >= terrain[Math.floor(simX)]) {
+                if (simX < SCREEN_W) return 'rgba(255, 51, 51, 0.9)'; 
+                else return 'rgba(255, 255, 255, 0.9)'; 
+            }
+            steps++;
+        }
+        return 'rgba(255, 51, 51, 0.9)'; 
+    }
+
     function drawBalloon(x, y, text) {
-        ctx.save();
-        ctx.translate(x, y);
+        ctx.save(); ctx.translate(x, y);
         ctx.font = "bold 13px 'Courier New', monospace";
         let w = ctx.measureText(text).width + 16;
-        
-        ctx.fillStyle = "white";
-        ctx.fillRect(-w/2, -26, w, 26);
-        ctx.fillRect(-2, 0, 4, 8);
-        
-        ctx.fillStyle = "black";
-        ctx.textAlign = "center";
-        ctx.textBaseline = "middle";
+        ctx.fillStyle = "white"; ctx.fillRect(-w/2, -26, w, 26); ctx.fillRect(-2, 0, 4, 8);
+        ctx.fillStyle = "black"; ctx.textAlign = "center"; ctx.textBaseline = "middle";
         ctx.fillText(text, 0, -13);
         ctx.restore();
     }
 
     function drawNamesUI() {
-        ctx.font = "bold 16px 'Courier New', monospace"; // Aumentado!
-        ctx.textAlign = "center";
-        ctx.textBaseline = "top";
-        
-        // Espaçamento ajustado na tela (60, 200, 340)
+        ctx.font = "bold 16px 'Courier New', monospace"; 
+        ctx.textAlign = "center"; ctx.textBaseline = "top";
         for(let i = 0; i < 3; i++) {
             let p = players[i * 2];
-            if (p) {
-                ctx.fillStyle = p.alive ? '#ffffff' : '#ff4444';
-                ctx.fillText(p.name, 60 + (i * 140), 20);
-            }
+            if (p) { ctx.fillStyle = p.alive ? '#ffffff' : '#ff4444'; ctx.fillText(p.name, 60 + (i * 140), 20); }
         }
         for(let i = 0; i < 3; i++) {
             let p = players[i * 2 + 1];
-            if (p) {
-                ctx.fillStyle = p.alive ? '#ffffff' : '#ff4444';
-                ctx.fillText(p.name, 460 + (i * 140), 20);
-            }
+            if (p) { ctx.fillStyle = p.alive ? '#ffffff' : '#ff4444'; ctx.fillText(p.name, 460 + (i * 140), 20); }
         }
     }
 
@@ -896,11 +949,9 @@
         ctx.fillStyle = 'black'; ctx.fillRect(-2, -8, 1, 1); ctx.fillRect(1, -8, 1, 1); 
         ctx.fillStyle = '#444'; ctx.fillRect(team === 0 ? 3 : -7, -14, 4, 10); 
 
-        // Se tem superbomba, pisca
-        if (players.find(p => p.x === x && p.y === y && p.hasSuperBomb)) {
+        if (players.find(p => p && p.x === x && p.y === y && p.hasSuperBomb)) {
             if (Math.floor(Date.now() / 150) % 2) {
-                ctx.fillStyle = 'rgba(255, 165, 0, 0.5)';
-                ctx.fillRect(-8, -18, 16, 18);
+                ctx.fillStyle = 'rgba(255, 165, 0, 0.5)'; ctx.fillRect(-8, -18, 16, 18);
             }
         }
 
@@ -925,10 +976,7 @@
         let clientY = e.touches ? e.touches[0].clientY : e.clientY;
         let scaleX = canvas.width / rect.width;
         let scaleY = canvas.height / rect.height;
-        return { 
-            x: ((clientX - rect.left) * scaleX) + cameraX, 
-            y: (clientY - rect.top) * scaleY 
-        };
+        return { x: ((clientX - rect.left) * scaleX) + cameraX, y: (clientY - rect.top) * scaleY };
     }
 
     function handleStart(e) {
@@ -944,16 +992,11 @@
             players[placedFriends * 2] = { name: matchNames[placedFriends], x: pos.x, y: terrain[Math.floor(pos.x)], vx: 0, vy: 0, team: 0, alive: true, taunt: null, hasSuperBomb: false };
             placedFriends++;
             
-            if (placedFriends >= 3) { 
-                placeBots(); startCombat(); 
-            } else {
-                modalText.innerHTML = `Posicione seus soldados! (Restam ${3 - placedFriends})`;
-            }
+            if (placedFriends >= 3) { placeBots(); startCombat(); } 
+            else { modalText.innerHTML = `Posicione seus soldados! (Restam ${3 - placedFriends})`; }
         } else if (gameState === 'PLAYING' && !actionInProgress) {
             let p = players[currentPlayerIndex];
-            if (p.team === 0 && currentAction === 'JUMP') {
-                executeJump(pos.x > p.x ? 1 : -1);
-            }
+            if (p.team === 0 && currentAction === 'JUMP') executeJump(pos.x > p.x ? 1 : -1);
         }
     }
 
@@ -978,8 +1021,7 @@
     canvas.addEventListener('touchend', (e) => { if(e.target.tagName !== 'BUTTON' && !e.target.id.includes('joy')) { e.preventDefault(); handleEnd(e); } }, {passive: false});
 
     function nextPhase() {
-        forceFullScreen(); 
-        cameraX = 0; 
+        forceFullScreen(); cameraX = 0; 
         if (gameState === 'DRAWING') {
             gameState = 'PLACING';
             modalText.innerHTML = "Posicione seus 3 soldados!";
@@ -995,8 +1037,7 @@
     }
 
     function startCombat() {
-        gameState = 'PLAYING';
-        currentPlayerIndex = 0;
+        gameState = 'PLAYING'; currentPlayerIndex = 0;
         centerModal.style.display = 'none'; 
         startPlayerTurn();
     }
@@ -1008,20 +1049,15 @@
     }
 
     function startPlayerTurn() {
-        actionsLeft = 2;
-        actionInProgress = false;
-        savedTrajectory = []; 
-        savedAim = null;      
+        actionsLeft = 2; actionInProgress = false;
+        savedTrajectory = []; savedAim = null;      
         let p = players[currentPlayerIndex];
         
         cameraX = (p.x < SCREEN_W) ? 0 : 400;
 
-        if (p.team === 0) {
-            actionArea.style.display = 'flex';
-            setAction('SHOOT');
-        } else {
-            actionArea.style.display = 'none';
-            joystickZone.style.display = 'none';
+        if (p.team === 0) { actionArea.style.display = 'flex'; setAction('SHOOT'); } 
+        else {
+            actionArea.style.display = 'none'; joystickZone.style.display = 'none';
             setTimeout(botAI, 1000);
         }
         updateStatusText();
@@ -1034,42 +1070,31 @@
     }
 
     function executeJump(direction) {
-        actionInProgress = true;
-        savedTrajectory = [];
-        savedAim = null;
+        actionInProgress = true; savedTrajectory = []; savedAim = null;
         let p = players[currentPlayerIndex];
-        
-        // Pulo Reduzido
-        p.vy = -3.5; 
-        p.vx = direction * 1.5; 
-        
+        p.vy = -3.5; p.vx = direction * 1.5; 
         for(let i=0; i<4; i++) explosions.push({ x: p.x, y: p.y, radius: 2, life: 10, type: 'smoke' });
         setTimeout(finishAction, 800); 
     }
 
     function executeShoot(vx, vy, rawDx, rawDy) {
-        actionInProgress = true;
-        currentTrajectory = []; 
+        actionInProgress = true; currentTrajectory = []; 
         savedAim = { dx: rawDx, dy: rawDy }; 
         let p = players[currentPlayerIndex];
         
-        // Ativa Superbomba e limpa o status
-        let isSuper = p.hasSuperBomb;
-        p.hasSuperBomb = false; 
-
+        let isSuper = p.hasSuperBomb; p.hasSuperBomb = false; 
         projectile = { x: p.x, y: p.y - 15, vx: vx, vy: vy, isSuper: isSuper };
         
         playShootSound(); 
         for(let i=0; i<5; i++) explosions.push({ x: p.x + (Math.random()-0.5)*10, y: p.y - 15 + (Math.random()-0.5)*10, radius: 3, life: 15, type: 'smoke' });
         
         shotsUntilDrop--;
-        if (shotsUntilDrop <= 0 && !activeBox) spawnBox();
+        if (shotsUntilDrop <= 0 && activeBoxes.length === 0) spawnBoxes();
     }
 
     function triggerExplosion(ex, ey, isSuper) {
         playExplosionSound(); 
-
-        const radius = isSuper ? 60 : 30; // DOBRO DO PODER SE FOR SUPER!
+        const radius = isSuper ? 60 : 30; 
         explosions.push({ x: ex, y: ey, radius: radius, life: 25, type: 'explosion' });
         
         let shooterName = players[currentPlayerIndex] ? players[currentPlayerIndex].name : "Fantasma";
@@ -1088,11 +1113,9 @@
             if (p && p.alive) {
                 let dist = Math.hypot(p.x - ex, p.y - ey);
                 if (dist <= radius + 5) {
-                    p.alive = false;
-                    killedSomeone = true;
+                    p.alive = false; killedSomeone = true;
                     bloodPuddles.push({ x: p.x });
                     
-                    // Som e Fantasma
                     playGhostSound();
                     ghosts.push({ x: p.x, y: p.y - 10, life: 150, maxLife: 150 });
                     
@@ -1102,17 +1125,13 @@
             }
         });
 
-        // CORREÇÃO: Se o soldado explodir a si mesmo, perde o turno!
-        if (!players[currentPlayerIndex].alive) {
-            actionsLeft = 0;
-        }
+        if (!players[currentPlayerIndex].alive) actionsLeft = 0; 
 
         let delay = 1000;
-        if (killedSomeone) {
-            delay = 3000; // Tempo do fantasma subir ao céu
-        } else {
+        if (killedSomeone) delay = 3000; 
+        else {
             let hasTaunt = triggerMissTaunt(ex, ey);
-            if(hasTaunt) delay = 4000; // 2s do balao + 2s parado na tela
+            if(hasTaunt) delay = 4000; 
         }
 
         checkWinCondition();
@@ -1122,16 +1141,13 @@
     function finishAction() {
         if (gameState !== 'PLAYING') return;
         
-        actionsLeft--;
-        updateStatusText();
+        actionsLeft--; updateStatusText();
 
-        if (actionsLeft <= 0) {
-            nextTurn();
-        } else {
+        if (actionsLeft <= 0) nextTurn(); 
+        else {
             actionInProgress = false;
             let p = players[currentPlayerIndex];
             cameraX = (p.x < SCREEN_W) ? 0 : 400;
-
             if (players[currentPlayerIndex].team === 1) setTimeout(botAI, 800);
         }
     }
@@ -1152,26 +1168,46 @@
         if (gameState !== 'PLAYING' || actionInProgress || actionsLeft <= 0) return;
         
         let bot = players[currentPlayerIndex];
+
+        // IA das Caixas: Prioriza coletar caixas no próprio campo
+        let myBoxes = activeBoxes.filter(b => b.x >= 400 && b.x <= WORLD_W);
+        if (myBoxes.length > 0) {
+            let targetBox = myBoxes.sort((a,b) => Math.abs(a.x - bot.x) - Math.abs(b.x - bot.x))[0];
+            let distToBox = targetBox.x - bot.x;
+            if (Math.abs(distToBox) > 10) {
+                executeJump(distToBox > 0 ? 1 : -1);
+                return;
+            }
+        }
+
+        // Se não foi coletar caixa, atira
         let targets = players.filter(p => p && p.team === 0 && p.alive);
         if (targets.length === 0) return;
         
         targets.sort((a, b) => Math.abs(a.x - bot.x) - Math.abs(b.x - bot.x));
         let target = targets[0];
         
-        if (actionsLeft >= 2 && Math.random() < 0.3) {
-            let dist = target.x - bot.x;
-            let dir = dist > 0 ? 1 : -1;
+        if (actionsLeft >= 2 && Math.random() < 0.3 && myBoxes.length === 0) {
+            let dist = target.x - bot.x; let dir = dist > 0 ? 1 : -1;
             if (Math.abs(dist) < 100) dir *= -1; 
             executeJump(dir);
         } else {
-            let dist = target.x - bot.x; 
-            let time = 60 + (Math.random() * 10); 
-            let vx = dist / time;
-            let vy = (target.y - bot.y - 0.5 * 0.15 * time * time) / time;
-            vx += (Math.random() - 0.5) * 0.5;
-            vy += (Math.random() - 0.5) * 0.5;
+            let dist = target.x - bot.x; let time = 60 + (Math.random() * 10); 
+            let vx = dist / time; let vy = (target.y - bot.y - 0.5 * 0.15 * time * time) / time;
+            vx += (Math.random() - 0.5) * 0.5; vy += (Math.random() - 0.5) * 0.5;
             executeShoot(vx, vy, 0, 0);
         }
+    }
+
+    function initVictoryBots(team) {
+        let winners = players.filter(p => p && p.team === team);
+        let startX = cameraX + 100;
+        let spacing = 100; 
+        victoryBots = winners.map((p, i) => {
+            let bx = startX + i * spacing;
+            let gy = terrain[Math.floor(bx)] || (canvas.height - 100);
+            return { name: p.name, team: p.team, isGhost: !p.alive, x: bx, y: gy, groundY: gy, vy: 0 };
+        });
     }
 
     function checkWinCondition() {
@@ -1182,28 +1218,29 @@
 
         if (botsAlive === 0 && friendsAlive > 0) { 
             gameState = 'GAME_OVER'; 
-            actionArea.style.display = 'none'; 
-            joystickZone.style.display = 'none';
+            actionArea.style.display = 'none'; joystickZone.style.display = 'none';
+            playVictorySound(); initVictoryBots(0);
             
             let vencedores = players.filter(p => p && p.team === 0).map(p => p.name).join('<br>');
             centerModal.style.display = 'flex';
             modalText.innerHTML = `<span style="color:#aaffaa; font-size: 20px;">🏆 VITÓRIA!</span><br><br><span style="font-size: 14px;">Vencedores:</span><br><span style="color:#fff">${vencedores}</span>`;
+            setTimeout(() => { showStartScreen(); }, 4000); // 4 Segundos e volta pro inicio
         }
         else if (friendsAlive === 0 && botsAlive > 0) { 
             gameState = 'GAME_OVER'; 
-            actionArea.style.display = 'none'; 
-            joystickZone.style.display = 'none';
+            actionArea.style.display = 'none'; joystickZone.style.display = 'none';
+            playVictorySound(); initVictoryBots(1);
             
             let vencedores = players.filter(p => p && p.team === 1).map(p => p.name).join('<br>');
             centerModal.style.display = 'flex';
             modalText.innerHTML = `<span style="color:#ff4444; font-size: 20px;">💀 DERROTA!</span><br><br><span style="font-size: 14px;">Vencedores:</span><br><span style="color:#fff">${vencedores}</span>`;
+            setTimeout(() => { showStartScreen(); }, 4000); 
         }
     }
 
     function drawTerrainAt(x, y) {
         if (x < 0) x = 0; if (x > 399) x = 399; 
-        terrain[x] = y; 
-        terrain[799 - x] = y; 
+        terrain[x] = y; terrain[799 - x] = y; 
     }
 
     function drawTerrainLine(x1, y1, x2, y2) {
@@ -1211,7 +1248,6 @@
         for (let i = 0; i <= steps; i++) drawTerrainAt(Math.floor(x1 + (x2 - x1) * (i / steps)), Math.floor(y1 + (y2 - y1) * (i / steps)));
     }
 
-    initGame();
     requestAnimationFrame(gameLoop);
 
 </script>
