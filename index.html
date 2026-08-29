@@ -111,6 +111,7 @@
             cursor: pointer;
             border-radius: 25px;
             transition: transform 0.1s;
+            display: none;
         }
         #btn-action:active { transform: translateY(3px) scale(0.95); }
 
@@ -231,6 +232,7 @@
 </head>
 <body>
 
+    <!-- TELA INICIAL -->
     <div id="start-screen">
         <div class="combat-symbol">
             <svg width="100" height="100" viewBox="0 0 100 100" fill="none" stroke="#d4af37" stroke-width="4" stroke-linecap="round">
@@ -246,13 +248,14 @@
         <button class="btn-start" onclick="initGame()">INICIAR JOGO</button>
     </div>
 
+    <!-- TELA DO JOGO -->
     <div id="game-container">
         <canvas id="gameCanvas" width="400" height="700"></canvas>
         
         <div id="dramatic-kill">ELIMINADO!</div>
 
         <div id="center-modal">
-            <div class="modal-box" id="modal-text">Desenhe o terreno com o dedo da esquerda para a direita</div>
+            <div class="modal-box" id="modal-text">Posicione seus 3 soldados na SUA tela!</div>
             <button id="btn-action" onclick="nextPhase()">Pronto</button>
         </div>
 
@@ -296,6 +299,14 @@
     const joystickKnob = document.getElementById('joystick-knob');
     const joyCancel = document.getElementById('joy-cancel');
 
+    // Imagens Personalizadas (Assets)
+    const imgVerde = new Image(); imgVerde.src = 'assets/img/verde.png';
+    const imgVermelho = new Image(); imgVermelho.src = 'assets/img/vermelho.png';
+    const imgCaixaVida = new Image(); imgCaixaVida.src = 'assets/img/caixavida.png';
+    const imgCaixaMissil = new Image(); imgCaixaMissil.src = 'assets/img/caixamissil.png';
+    const imgExplosao1 = new Image(); imgExplosao1.src = 'assets/img/explosão1.png';
+    const imgExplosao2 = new Image(); imgExplosao2.src = 'assets/img/explosão2.png';
+
     const BGS = ['assets/img/fundo.png', 'assets/img/fundo2.png', 'assets/img/fundo3.png', 'assets/img/fundo4.png'];
     const bgImage = new Image();
     let terrainColor = '#1c5e20'; 
@@ -317,12 +328,8 @@
     ];
 
     const REVENGE_PHRASES = [
-        "VOU ME VINGAR,\n{name}!",
-        "VOCÊ ME PAGA,\n{name}!",
-        "NÃO DESCANSAREI,\n{name}!",
-        "VOU TE ASSOMBRAR,\n{name}!",
-        "TEM UM C* AQUI,\n{name}!",
-        "MALDITO,\n{name}!",
+        "VOU ME VINGAR,\n{name}!", "VOCÊ ME PAGA,\n{name}!", "NÃO DESCANSAREI,\n{name}!",
+        "VOU TE ASSOMBRAR,\n{name}!", "TEM UM C* AQUI,\n{name}!", "MALDITO,\n{name}!",
         "GOLPE DE SORTE,\n{name}!"
     ];
 
@@ -345,9 +352,6 @@
     let joyAimDx = 0;
     let joyAimDy = 0;
 
-    let isMouseDown = false;
-    let lastMouseX = -1, lastMouseY = -1;
-    
     let projectile = null;
     let explosions = [];
     let bloodPuddles = []; 
@@ -362,6 +366,8 @@
     let savedTrajectory = [];
     let savedAim = null; 
     let audioCtx = null;
+    let actionTimeout = null; 
+    let reviveGhost = null; 
 
     // --- SISTEMA DE ÁUDIO ---
     function initAudio() {
@@ -506,6 +512,21 @@
         dramaticKill.style.display = 'none';
     }
 
+    function generateProceduralTerrain() {
+        let baseHeight = canvas.height - 250;
+        let offset1 = Math.random() * 1000;
+        let offset2 = Math.random() * 1000;
+        let offset3 = Math.random() * 1000;
+        for (let x = 0; x < 400; x++) {
+            let y = baseHeight 
+                  + Math.sin((x + offset1) * 0.015) * 60 
+                  + Math.sin((x + offset2) * 0.05) * 20
+                  + Math.sin((x + offset3) * 0.1) * 5;
+            terrain[x] = y;
+            terrain[799 - x] = y; 
+        }
+    }
+
     function initGame() {
         forceFullScreen();
         startScreen.style.display = 'none';
@@ -516,13 +537,14 @@
         if(currentBgSrc.includes('fundo2')) terrainColor = '#5c4033'; 
         else terrainColor = '#1c5e20'; 
 
-        gameState = 'DRAWING';
-        terrain = new Array(WORLD_W).fill(canvas.height - 350); 
+        gameState = 'PLACING'; // Pula a fase de desenho
+        terrain = new Array(WORLD_W); 
+        generateProceduralTerrain();
+
         players = new Array(6).fill(null);
         currentPlayerIndex = 0;
         actionsLeft = 2;
         actionInProgress = false;
-        isMouseDown = false;
         cameraX = 0; 
         
         projectile = null;
@@ -538,22 +560,23 @@
         savedTrajectory = [];
         savedAim = null;
         placedFriends = 0;
+        actionTimeout = null;
+        reviveGhost = null;
 
         matchNames = [...ALL_NAMES].sort(() => 0.5 - Math.random()).slice(0, 6);
 
         centerModal.style.display = 'flex';
-        modalText.innerHTML = "Desenhe o terreno com o dedo da esquerda para a direita";
-        btnAction.style.display = 'inline-block';
+        modalText.innerHTML = "Posicione seus 3 soldados na SUA tela!";
+        btnAction.style.display = 'none'; // Desenho foi removido
         
-        statusText.innerText = "Fase 1 - Terreno";
+        statusText.innerText = "Fase 1 - Posicionar";
         actionArea.style.display = 'none';
         joystickZone.style.display = 'none';
-        setAction('SHOOT');
     }
 
     function setAction(actionType) {
         forceFullScreen(); 
-        if (gameState !== 'PLAYING' || players[currentPlayerIndex]?.team !== 0) return;
+        if (gameState !== 'PLAYING' || players[currentPlayerIndex]?.team !== 0 || reviveGhost) return;
         currentAction = actionType;
         btnShoot.classList.toggle('active', actionType === 'SHOOT');
         btnJump.classList.toggle('active', actionType === 'JUMP');
@@ -561,7 +584,7 @@
     }
 
     function handleJoyStart(e) {
-        if (gameState !== 'PLAYING' || currentAction !== 'SHOOT' || actionInProgress) return;
+        if (gameState !== 'PLAYING' || currentAction !== 'SHOOT' || actionInProgress || reviveGhost) return;
         isDraggingJoy = true;
         joystickKnob.style.transition = 'none';
         updateJoy(e);
@@ -662,11 +685,21 @@
             let deadAllies = players.filter(ally => ally && ally.team === p.team && !ally.alive);
             if (deadAllies.length > 0) {
                 let revived = deadAllies[Math.floor(Math.random() * deadAllies.length)];
-                revived.alive = true;
-                revived.x = box.x;
-                revived.y = box.y - 5;
-                revived.vx = 0; revived.vy = 0;
-                showDramaticMessage(`${revived.name} REVIVEU!`, '#ffffaa');
+                
+                if (actionTimeout) { clearTimeout(actionTimeout); actionTimeout = null; }
+                actionInProgress = true; 
+                
+                reviveGhost = {
+                    x: revived.deathX,
+                    y: -100, 
+                    targetX: revived.deathX,
+                    targetY: revived.deathY,
+                    player: revived
+                };
+                
+                showDramaticMessage(`ALMA DE ${revived.name.toUpperCase()}\nRETORNANDO!`, '#ffffaa');
+                playGhostSound();
+                
             } else {
                 showDramaticMessage(`CAIXA VAZIA...`, '#aaaaaa');
             }
@@ -689,14 +722,36 @@
     function update() {
         activeBoxes.forEach(box => {
             let groundY = terrain[Math.floor(box.x)];
-            if (box.y < groundY - 8) { 
+            if (box.y < groundY - 10) { 
                 box.y += 1.5; 
                 box.falling = true;
             } else {
-                box.y = groundY - 8;
+                box.y = groundY - 10;
                 box.falling = false;
             }
         });
+
+        // Animação de Ressurreição
+        if (reviveGhost) {
+            let dy = reviveGhost.targetY - reviveGhost.y;
+            if (dy > 5) {
+                reviveGhost.y += Math.max(dy * 0.04, 2); 
+                reviveGhost.x = reviveGhost.targetX + Math.sin(Date.now() * 0.01) * 30; 
+                cameraX = (reviveGhost.x < SCREEN_W) ? 0 : 400; 
+            } else {
+                reviveGhost.player.alive = true;
+                reviveGhost.player.x = reviveGhost.targetX;
+                reviveGhost.player.y = reviveGhost.targetY - 10;
+                reviveGhost.player.vx = 0;
+                reviveGhost.player.vy = 0;
+                
+                explosions.push({ x: reviveGhost.targetX, y: reviveGhost.targetY, radius: 40, life: 30, type: 'sparkle' });
+                playPowerupSound();
+                
+                reviveGhost = null;
+                actionTimeout = setTimeout(finishAction, 1000); 
+            }
+        }
 
         dyingPlayers.forEach(d => {
             d.life--;
@@ -757,7 +812,7 @@
                     let shooterName = players[currentPlayerIndex] ? players[currentPlayerIndex].name : "Fantasma";
                     saveAndClearProjectile();
                     let hasTaunt = triggerMissTaunt(-100, -100, shooterName); 
-                    setTimeout(finishAction, hasTaunt ? 4000 : 1000); 
+                    actionTimeout = setTimeout(finishAction, hasTaunt ? 4000 : 1000); 
                 } 
                 else if (projectile.y >= terrain[Math.floor(projectile.x)]) {
                     triggerExplosion(projectile.x, projectile.y, projectile.isSuper);
@@ -808,15 +863,15 @@
         ctx.globalAlpha = alpha; 
         ctx.translate(x, y);
         ctx.fillStyle = 'rgba(220, 240, 255, 0.9)';
-        ctx.fillRect(-8, -15, 16, 12);
-        ctx.fillRect(-6, -18, 12, 3);
-        ctx.fillRect(-8, -3, 4, 3);
-        ctx.fillRect(-2, -3, 4, 3);
-        ctx.fillRect(4, -3, 4, 3);
+        ctx.fillRect(-10, -18, 20, 15);
+        ctx.fillRect(-8, -21, 16, 3);
+        ctx.fillRect(-10, -3, 5, 3);
+        ctx.fillRect(-2, -3, 5, 3);
+        ctx.fillRect(6, -3, 5, 3);
         ctx.fillStyle = 'black';
-        ctx.fillRect(-5, -12, 2, 2);
-        ctx.fillRect(3, -12, 2, 2);
-        ctx.fillRect(-2, -8, 4, 4);
+        ctx.fillRect(-6, -14, 2, 2);
+        ctx.fillRect(4, -14, 2, 2);
+        ctx.fillRect(-2, -9, 4, 4);
         ctx.restore();
     }
 
@@ -845,22 +900,22 @@
             
             if (box.falling) {
                 ctx.fillStyle = '#ffffff'; 
-                ctx.fillRect(-10, -25, 20, 7);
+                ctx.fillRect(-12, -30, 24, 8);
                 ctx.strokeStyle = '#fff'; ctx.lineWidth = 1;
                 ctx.beginPath();
-                ctx.moveTo(-10, -18); ctx.lineTo(-4, -8);
-                ctx.moveTo(10, -18); ctx.lineTo(4, -8);
+                ctx.moveTo(-12, -22); ctx.lineTo(-6, -12);
+                ctx.moveTo(12, -22); ctx.lineTo(6, -12);
                 ctx.stroke();
             }
 
-            if (box.type === 'VIDA') ctx.fillStyle = (Math.floor(Date.now() / 150) % 2) ? '#ffffaa' : '#ffffff'; 
-            else ctx.fillStyle = '#ffaa00';
-            
-            ctx.fillRect(-8, -8, 16, 16);
-            ctx.strokeStyle = '#fff'; ctx.lineWidth = 1.5; ctx.strokeRect(-8, -8, 16, 16);
-            ctx.fillStyle = '#000'; ctx.font = 'bold 10px sans-serif'; ctx.textAlign = 'center'; ctx.textBaseline = 'middle';
-            let txt = box.type === 'VIDA' ? '❤' : 'S';
-            ctx.fillText(txt, 0, 1);
+            let size = 26; // Reduzido
+            let imgBox = box.type === 'VIDA' ? imgCaixaVida : imgCaixaMissil;
+            if (imgBox.complete) {
+                ctx.drawImage(imgBox, -size/2, -size/2, size, size);
+            } else {
+                ctx.fillStyle = box.type === 'VIDA' ? '#ffffff' : '#ffaa00';
+                ctx.fillRect(-size/2, -size/2, size, size);
+            }
             ctx.restore();
         });
 
@@ -887,7 +942,7 @@
 
         players.forEach((p, index) => {
             if (!p || !p.alive) return;
-            drawSoldier(p.x, p.y, p.team, (gameState === 'PLAYING' && index === currentPlayerIndex && !actionInProgress));
+            drawSoldier(p.x, p.y, p.team, (gameState === 'PLAYING' && index === currentPlayerIndex && !actionInProgress && !reviveGhost));
         });
 
         dyingPlayers.forEach(d => {
@@ -902,13 +957,15 @@
                 ctx.fillStyle = '#fff';
                 ctx.font = 'bold 16px Courier New';
                 ctx.textAlign = 'center';
-                ctx.fillText(b.name, b.x, b.y - 30);
+                ctx.fillText(b.name, b.x, b.y - 35);
             });
         }
 
         ghosts.forEach(g => { drawGhost(g.x, g.y, (g.life / g.maxLife) * 0.8); });
+        
+        if (reviveGhost) drawGhost(reviveGhost.x, reviveGhost.y, 0.9);
 
-        if (gameState === 'PLAYING' && isDraggingJoy && currentAction === 'SHOOT' && players[currentPlayerIndex].team === 0 && !actionInProgress && !isCancelingJoy) {
+        if (gameState === 'PLAYING' && isDraggingJoy && currentAction === 'SHOOT' && players[currentPlayerIndex].team === 0 && !actionInProgress && !isCancelingJoy && !reviveGhost) {
             let p = players[currentPlayerIndex];
             let aimColor = getAimColor(p, joyAimDx, joyAimDy);
             ctx.strokeStyle = aimColor; ctx.lineWidth = 2;
@@ -927,15 +984,18 @@
                 let sr = r * (1 - exp.life/25) + 10;
                 ctx.fillStyle = `rgba(255, 255, 100, ${exp.life / 25})`;
                 ctx.fillRect(exp.x - sr, exp.y - sr, sr*2, sr*2);
-            } else {
-                let er = r * (1 - exp.life/25) + 3;
-                ctx.fillStyle = `rgba(255, ${80 + exp.life * 5}, 0, ${exp.life / 25})`;
-                ctx.fillRect(exp.x - er, exp.y - er, er*2, er*2);
+            } else if (exp.type === 'explosion1' || exp.type === 'explosion2') {
+                let img = exp.type === 'explosion1' ? imgExplosao1 : imgExplosao2;
+                if (img.complete) {
+                    ctx.globalAlpha = exp.life / 25; 
+                    ctx.drawImage(img, exp.x - r, exp.y - r, r*2, r*2);
+                    ctx.globalAlpha = 1.0;
+                }
             }
         });
 
         players.forEach(p => {
-            if (p && p.alive && p.taunt && p.taunt.life > 0) drawBalloon(p.x, p.y - 35, p.taunt.text);
+            if (p && p.alive && p.taunt && p.taunt.life > 0) drawBalloon(p.x, p.y - 45, p.taunt.text);
         });
 
         drawNamesUI();
@@ -1013,24 +1073,28 @@
 
     function drawSoldier(x, y, team, isActive) {
         ctx.save(); ctx.translate(x, y);
-        const helmetColor = team === 0 ? '#3cb371' : '#b33c3c';
-        const bodyColor = team === 0 ? '#2e8b57' : '#8b2e2e';
-
-        ctx.fillStyle = bodyColor; ctx.fillRect(-6, -12, 12, 12); 
-        ctx.fillStyle = helmetColor; ctx.fillRect(-7, -15, 14, 5); ctx.fillRect(-4, -17, 8, 3); 
-        ctx.fillStyle = '#ffdbac'; ctx.fillRect(-4, -10, 8, 5); 
-        ctx.fillStyle = 'black'; ctx.fillRect(-2, -8, 1, 1); ctx.fillRect(1, -8, 1, 1); 
-        ctx.fillStyle = '#444'; ctx.fillRect(team === 0 ? 3 : -7, -14, 4, 10); 
+        let w = 30, h = 30; // 1.5x do antigo
+        
+        if (team === 1) ctx.scale(-1, 1); 
 
         if (players.find(p => p && p.x === x && p.y === y && p.hasSuperBomb)) {
             if (Math.floor(Date.now() / 150) % 2) {
-                ctx.fillStyle = 'rgba(255, 165, 0, 0.5)'; ctx.fillRect(-8, -18, 16, 18);
+                ctx.fillStyle = 'rgba(255, 165, 0, 0.5)'; 
+                ctx.beginPath(); ctx.arc(0, -h/2, h/2 + 2, 0, Math.PI * 2); ctx.fill();
             }
+        }
+
+        let img = team === 0 ? imgVerde : imgVermelho;
+        if (img.complete) {
+            ctx.drawImage(img, -w/2, -h, w, h);
+        } else {
+            ctx.fillStyle = team === 0 ? '#2e8b57' : '#8b2e2e'; 
+            ctx.fillRect(-w/2, -h, w, h); 
         }
 
         if (isActive && (Math.floor(Date.now() / 250) % 2)) {
             ctx.fillStyle = 'yellow'; ctx.beginPath();
-            ctx.moveTo(0, -22); ctx.lineTo(4, -28); ctx.lineTo(-4, -28); ctx.fill(); 
+            ctx.moveTo(0, -h - 5); ctx.lineTo(5, -h - 12); ctx.lineTo(-5, -h - 12); ctx.fill(); 
         }
         ctx.restore();
     }
@@ -1058,55 +1122,27 @@
         forceFullScreen(); 
         let pos = getEventPos(e);
 
-        if (gameState === 'DRAWING') {
-            isMouseDown = true; lastMouseX = pos.x; lastMouseY = pos.y; drawTerrainAt(pos.x, pos.y);
-        } else if (gameState === 'PLACING') {
+        if (gameState === 'PLACING') {
             if (pos.x > 400) { modalText.innerHTML = "Toque na SUA Tela!"; return; }
             playPlaceSound();
-            players[placedFriends * 2] = { name: matchNames[placedFriends], x: pos.x, y: terrain[Math.floor(pos.x)], vx: 0, vy: 0, team: 0, alive: true, taunt: null, hasSuperBomb: false };
+            players[placedFriends * 2] = { name: matchNames[placedFriends], x: pos.x, y: terrain[Math.floor(pos.x)], vx: 0, vy: 0, team: 0, alive: true, taunt: null, hasSuperBomb: false, deathX: 0, deathY: 0 };
             placedFriends++;
             
             if (placedFriends >= 3) { placeBots(); startCombat(); } 
             else { modalText.innerHTML = `Posicione seus soldados! (Restam ${3 - placedFriends})`; }
-        } else if (gameState === 'PLAYING' && !actionInProgress) {
+        } else if (gameState === 'PLAYING' && !actionInProgress && !reviveGhost) {
             let p = players[currentPlayerIndex];
             if (p.team === 0 && currentAction === 'JUMP') executeJump(pos.x > p.x ? 1 : -1);
         }
     }
 
-    function handleMove(e) {
-        if (!isMouseDown) return;
-        let pos = getEventPos(e);
-        if (gameState === 'DRAWING') {
-            drawTerrainLine(lastMouseX, lastMouseY, pos.x, pos.y);
-            lastMouseX = pos.x; lastMouseY = pos.y;
-        }
-    }
-
-    function handleEnd(e) {
-        isMouseDown = false; lastMouseX = -1;
-    }
-
     canvas.addEventListener('mousedown', handleStart);
-    canvas.addEventListener('mousemove', handleMove);
-    canvas.addEventListener('mouseup', handleEnd);
     canvas.addEventListener('touchstart', (e) => { if(e.target.tagName !== 'BUTTON' && !e.target.id.includes('joy')) { e.preventDefault(); handleStart(e); } }, {passive: false});
-    canvas.addEventListener('touchmove', (e) => { if(e.target.tagName !== 'BUTTON' && !e.target.id.includes('joy')) { e.preventDefault(); handleMove(e); } }, {passive: false});
-    canvas.addEventListener('touchend', (e) => { if(e.target.tagName !== 'BUTTON' && !e.target.id.includes('joy')) { e.preventDefault(); handleEnd(e); } }, {passive: false});
-
-    function nextPhase() {
-        forceFullScreen(); cameraX = 0; 
-        if (gameState === 'DRAWING') {
-            gameState = 'PLACING';
-            modalText.innerHTML = "Posicione seus 3 soldados!";
-            btnAction.style.display = 'none';
-        }
-    }
 
     function placeBots() {
         for (let i = 0; i < 3; i++) {
             let bx = 450 + (i * 100) + Math.random() * 80;
-            players[i * 2 + 1] = { name: matchNames[3 + i], x: bx, y: terrain[Math.floor(bx)], vx: 0, vy: 0, team: 1, alive: true, taunt: null, hasSuperBomb: false };
+            players[i * 2 + 1] = { name: matchNames[3 + i], x: bx, y: terrain[Math.floor(bx)], vx: 0, vy: 0, team: 1, alive: true, taunt: null, hasSuperBomb: false, deathX: 0, deathY: 0 };
         }
     }
 
@@ -1114,12 +1150,6 @@
         gameState = 'PLAYING'; currentPlayerIndex = 0;
         centerModal.style.display = 'none'; 
         startPlayerTurn();
-    }
-
-    function resetGame() {
-        forceFullScreen(); 
-        ctx.fillStyle = 'black'; ctx.fillRect(0, 0, canvas.width, canvas.height);
-        setTimeout(initGame, 50);
     }
 
     function startPlayerTurn() {
@@ -1132,7 +1162,8 @@
         if (p.team === 0) { actionArea.style.display = 'flex'; setAction('SHOOT'); } 
         else {
             actionArea.style.display = 'none'; joystickZone.style.display = 'none';
-            setTimeout(botAI, 1000);
+            if (actionTimeout) clearTimeout(actionTimeout);
+            actionTimeout = setTimeout(botAI, 1000);
         }
         updateStatusText();
     }
@@ -1149,7 +1180,8 @@
         playJumpSound();
         p.vy = -3.5; p.vx = direction * 1.5; 
         for(let i=0; i<4; i++) explosions.push({ x: p.x, y: p.y, radius: 2, life: 10, type: 'smoke' });
-        setTimeout(finishAction, 800); 
+        if (actionTimeout) clearTimeout(actionTimeout);
+        actionTimeout = setTimeout(finishAction, 800); 
     }
 
     function executeShoot(vx, vy, rawDx, rawDy) {
@@ -1170,7 +1202,7 @@
     function triggerExplosion(ex, ey, isSuper) {
         playExplosionSound(); 
         const radius = isSuper ? 60 : 30; 
-        explosions.push({ x: ex, y: ey, radius: radius, life: 25, type: 'explosion' });
+        explosions.push({ x: ex, y: ey, radius: radius, life: 30, type: isSuper ? 'explosion2' : 'explosion1' });
         
         let shooterName = players[currentPlayerIndex] ? players[currentPlayerIndex].name : "Fantasma";
         let killedSomeone = false;
@@ -1189,6 +1221,7 @@
                 let dist = Math.hypot(p.x - ex, p.y - ey);
                 if (dist <= radius + 5) {
                     p.alive = false; killedSomeone = true;
+                    p.deathX = p.x; p.deathY = terrain[Math.floor(p.x)];
                     bloodPuddles.push({ x: p.x });
                     
                     let revengeMsg = REVENGE_PHRASES[Math.floor(Math.random() * REVENGE_PHRASES.length)].replace('{name}', shooterName.toUpperCase());
@@ -1210,11 +1243,14 @@
         }
 
         checkWinCondition();
-        if (gameState === 'PLAYING') setTimeout(finishAction, delay); 
+        if (gameState === 'PLAYING') {
+            if (actionTimeout) clearTimeout(actionTimeout);
+            actionTimeout = setTimeout(finishAction, delay); 
+        }
     }
 
     function finishAction() {
-        if (gameState !== 'PLAYING') return;
+        if (gameState !== 'PLAYING' || reviveGhost) return;
         
         actionsLeft--; updateStatusText();
 
@@ -1223,7 +1259,10 @@
             actionInProgress = false;
             let p = players[currentPlayerIndex];
             cameraX = (p.x < SCREEN_W) ? 0 : 400;
-            if (players[currentPlayerIndex].team === 1) setTimeout(botAI, 800);
+            if (players[currentPlayerIndex].team === 1) {
+                if (actionTimeout) clearTimeout(actionTimeout);
+                actionTimeout = setTimeout(botAI, 800);
+            }
         }
     }
 
@@ -1240,7 +1279,7 @@
     }
 
     function botAI() {
-        if (gameState !== 'PLAYING' || actionInProgress || actionsLeft <= 0) return;
+        if (gameState !== 'PLAYING' || actionInProgress || actionsLeft <= 0 || reviveGhost) return;
         
         let bot = players[currentPlayerIndex];
 
@@ -1309,16 +1348,6 @@
             modalText.innerHTML = `<span style="color:#ff4444; font-size: 20px;">💀 DERROTA!</span><br><br><span style="font-size: 14px;">Vencedores:</span><br><span style="color:#fff">${vencedores}</span>`;
             setTimeout(() => { showStartScreen(); }, 8000); 
         }
-    }
-
-    function drawTerrainAt(x, y) {
-        if (x < 0) x = 0; if (x > 399) x = 399; 
-        terrain[x] = y; terrain[799 - x] = y; 
-    }
-
-    function drawTerrainLine(x1, y1, x2, y2) {
-        let steps = Math.max(Math.abs(x2 - x1), Math.abs(y2 - y1));
-        for (let i = 0; i <= steps; i++) drawTerrainAt(Math.floor(x1 + (x2 - x1) * (i / steps)), Math.floor(y1 + (y2 - y1) * (i / steps)));
     }
 
     requestAnimationFrame(gameLoop);
