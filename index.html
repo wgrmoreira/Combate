@@ -81,7 +81,7 @@
             top: 15%; 
             left: 50%;
             transform: translate(-50%, -50%);
-            display: none; /* Só aparece quando o jogo inicia */
+            display: none; 
             flex-direction: column;
             align-items: center;
             pointer-events: none; 
@@ -151,7 +151,7 @@
             height: 240px; 
             background: rgba(15, 15, 15, 0.98);
             border-top: 1px solid rgba(255,255,255,0.1);
-            display: none; /* Controlado via JS */
+            display: none; 
             flex-direction: column;
             align-items: center;
             padding: 15px 20px;
@@ -231,10 +231,8 @@
 </head>
 <body>
 
-    <!-- TELA INICIAL -->
     <div id="start-screen">
         <div class="combat-symbol">
-            <!-- Símbolo Minimalista de Mira/Combate -->
             <svg width="100" height="100" viewBox="0 0 100 100" fill="none" stroke="#d4af37" stroke-width="4" stroke-linecap="round">
                 <circle cx="50" cy="50" r="40"/>
                 <line x1="50" y1="0" x2="50" y2="25"/>
@@ -248,7 +246,6 @@
         <button class="btn-start" onclick="initGame()">INICIAR JOGO</button>
     </div>
 
-    <!-- TELA DO JOGO -->
     <div id="game-container">
         <canvas id="gameCanvas" width="400" height="700"></canvas>
         
@@ -310,9 +307,13 @@
     ];
 
     const TAUNTS = [
-        "HAHAHA!", "ERROU!", "VC É RUIM!", "FRACO!", 
-        "NUNCA ME PEGARÁ!", "PASSOU LONGE!", "PRECISA DE ÓCULOS?", 
-        "QUE MIRA HORRÍVEL!", "SÓ ISSO?", "TENTA DE NOVO!"
+        "HAHAHA, {name}!", "{name}, ERROU!", "{name}, VC É RUIM!", "FRACO, {name}!", 
+        "{name}, NUNCA ME PEGARÁ!", "PASSOU LONGE, {name}!", "{name} PRECISA DE ÓCULOS?", 
+        "QUE MIRA HORRÍVEL, {name}!", "SÓ ISSO, {name}?", "{name}, TENTA DE NOVO!",
+        "{name}, DEIXA QUE EU TE ENSINO!", "CHORA, {name}!", "FOI QUASE... MENTIRA, {name}!",
+        "{name}, ATIRA IGUAL MINHA AVÓ!", "DESISTE, {name}!", "MIROU NO VENTO, {name}?",
+        "{name}, TÁ COM MEDO?", "ESSE É O SEU MELHOR, {name}?", "{name}, NEM FEZ CÓCEGAS!",
+        "VAI TREINAR, {name}!"
     ];
 
     const SCREEN_W = 400;
@@ -340,9 +341,10 @@
     let projectile = null;
     let explosions = [];
     let bloodPuddles = []; 
+    let dyingPlayers = []; // Nova matriz para o grito de dor!
     let ghosts = []; 
     let victoryBots = []; 
-    let activeBoxes = []; // Agora suporta múltiplas caixas
+    let activeBoxes = []; 
     let shotsUntilDrop = 5;
 
     let placedFriends = 0;
@@ -358,6 +360,32 @@
             audioCtx = new AudioContext();
         }
         if (audioCtx.state === 'suspended') audioCtx.resume();
+    }
+
+    function playPlaceSound() {
+        if (!audioCtx) return;
+        let osc = audioCtx.createOscillator();
+        let gain = audioCtx.createGain();
+        osc.type = 'sine';
+        osc.frequency.setValueAtTime(800, audioCtx.currentTime);
+        osc.frequency.exponentialRampToValueAtTime(1200, audioCtx.currentTime + 0.1);
+        gain.gain.setValueAtTime(0.3, audioCtx.currentTime);
+        gain.gain.exponentialRampToValueAtTime(0.01, audioCtx.currentTime + 0.1);
+        osc.connect(gain); gain.connect(audioCtx.destination);
+        osc.start(); osc.stop(audioCtx.currentTime + 0.1);
+    }
+
+    function playJumpSound() {
+        if (!audioCtx) return;
+        let osc = audioCtx.createOscillator();
+        let gain = audioCtx.createGain();
+        osc.type = 'sine';
+        osc.frequency.setValueAtTime(300, audioCtx.currentTime);
+        osc.frequency.exponentialRampToValueAtTime(600, audioCtx.currentTime + 0.2);
+        gain.gain.setValueAtTime(0.3, audioCtx.currentTime);
+        gain.gain.exponentialRampToValueAtTime(0.01, audioCtx.currentTime + 0.2);
+        osc.connect(gain); gain.connect(audioCtx.destination);
+        osc.start(); osc.stop(audioCtx.currentTime + 0.2);
     }
 
     function playShootSound() {
@@ -490,6 +518,7 @@
         projectile = null;
         explosions = [];
         bloodPuddles = [];
+        dyingPlayers = [];
         ghosts = [];
         victoryBots = [];
         activeBoxes = [];
@@ -521,7 +550,6 @@
         joystickZone.style.display = (actionType === 'SHOOT') ? 'block' : 'none';
     }
 
-    // --- LÓGICA DO JOYSTICK ---
     function handleJoyStart(e) {
         if (gameState !== 'PLAYING' || currentAction !== 'SHOOT' || actionInProgress) return;
         isDraggingJoy = true;
@@ -587,11 +615,9 @@
     document.addEventListener('touchmove', handleJoyMove, {passive: false});
     document.addEventListener('touchend', handleJoyEnd, {passive: false});
 
-    // --- LÓGICA DE CAIXAS (DROPS DUPLOS) ---
     function spawnBoxes() {
         let type1 = Math.random() < 0.5 ? 'SUPERBOMBA' : 'VIDA';
         let type2 = Math.random() < 0.5 ? 'SUPERBOMBA' : 'VIDA';
-        // Uma em cada lado da tela
         activeBoxes.push({ x: 50 + Math.random() * 300, y: -50, falling: true, type: type1 });
         activeBoxes.push({ x: 450 + Math.random() * 300, y: -50, falling: true, type: type2 });
     }
@@ -642,8 +668,6 @@
         updateStatusText();
     }
 
-
-    // --- LOOP PRINCIPAL ---
     function gameLoop() {
         if (gameState !== 'START_SCREEN') {
             update();
@@ -653,10 +677,9 @@
     }
 
     function update() {
-        // Atualiza a posição das caixas caindo (-30% tamanho)
         activeBoxes.forEach(box => {
             let groundY = terrain[Math.floor(box.x)];
-            if (box.y < groundY - 8) { // Centro da caixa nova
+            if (box.y < groundY - 8) { 
                 box.y += 1.5; 
                 box.falling = true;
             } else {
@@ -664,6 +687,16 @@
                 box.falling = false;
             }
         });
+
+        // Atualiza a vida dos soldados morrendo (gritando)
+        dyingPlayers.forEach(d => {
+            d.life--;
+            if (d.life <= 0) {
+                playGhostSound();
+                ghosts.push({ x: d.x, y: d.y - 10, life: 150, maxLife: 150 });
+            }
+        });
+        dyingPlayers = dyingPlayers.filter(d => d.life > 0);
 
         ghosts.forEach(g => {
             g.y -= 1.5; 
@@ -712,8 +745,9 @@
                 }
 
                 if (projectile.x < 0 || projectile.x > WORLD_W || projectile.y > canvas.height + 50) {
+                    let shooterName = players[currentPlayerIndex] ? players[currentPlayerIndex].name : "Fantasma";
                     saveAndClearProjectile();
-                    let hasTaunt = triggerMissTaunt(-100, -100); 
+                    let hasTaunt = triggerMissTaunt(-100, -100, shooterName); 
                     setTimeout(finishAction, hasTaunt ? 4000 : 1000); 
                 } 
                 else if (projectile.y >= terrain[Math.floor(projectile.x)]) {
@@ -726,20 +760,20 @@
             explosions = explosions.filter(exp => exp.life > 0);
         }
 
-        // Animação de Vitória
         if (gameState === 'GAME_OVER') {
             victoryBots.forEach(b => {
                 b.y += b.vy;
                 b.vy += 0.25; 
                 if (b.y >= b.groundY) {
                     b.y = b.groundY;
-                    b.vy = -3 - Math.random() * 3; // Pula sem parar
+                    b.vy = -3 - Math.random() * 3; 
+                    playJumpSound(); 
                 }
             });
         }
     }
 
-    function triggerMissTaunt(ex, ey) {
+    function triggerMissTaunt(ex, ey, shooterName) {
         let pTurn = players[currentPlayerIndex];
         if(!pTurn) return false;
         let enemies = players.filter(p => p && p.alive && p.team !== pTurn.team);
@@ -747,7 +781,7 @@
         if (enemies.length > 0) {
             enemies.sort((a,b) => Math.hypot(a.x - ex, a.y - ey) - Math.hypot(b.x - ex, b.y - ey));
             let closest = enemies[0];
-            let msg = TAUNTS[Math.floor(Math.random() * TAUNTS.length)];
+            let msg = TAUNTS[Math.floor(Math.random() * TAUNTS.length)].replace(/\{name\}/g, shooterName);
             closest.taunt = { text: msg, life: 120 }; 
             return true;
         }
@@ -796,7 +830,6 @@
         for (let x = 0; x < WORLD_W; x++) ctx.lineTo(x, terrain[x]);
         ctx.lineTo(WORLD_W, canvas.height); ctx.fill();
         
-        // Desenha Caixas (-30% Tamanho)
         activeBoxes.forEach(box => {
             ctx.save();
             ctx.translate(box.x, box.y);
@@ -814,7 +847,6 @@
             if (box.type === 'VIDA') ctx.fillStyle = (Math.floor(Date.now() / 150) % 2) ? '#ffffaa' : '#ffffff'; 
             else ctx.fillStyle = '#ffaa00';
             
-            // Caixa 16x16
             ctx.fillRect(-8, -8, 16, 16);
             ctx.strokeStyle = '#fff'; ctx.lineWidth = 1.5; ctx.strokeRect(-8, -8, 16, 16);
             ctx.fillStyle = '#000'; ctx.font = 'bold 10px sans-serif'; ctx.textAlign = 'center'; ctx.textBaseline = 'middle';
@@ -849,7 +881,11 @@
             drawSoldier(p.x, p.y, p.team, (gameState === 'PLAYING' && index === currentPlayerIndex && !actionInProgress));
         });
 
-        // Desenhar Bots Vitoriosos pulando
+        // Grito de Vingança
+        dyingPlayers.forEach(d => {
+            drawBalloon(d.x, d.y - 5, `VOU ME VINGAR,\n${d.killer.toUpperCase()}!`);
+        });
+
         if (gameState === 'GAME_OVER') {
             victoryBots.forEach(b => {
                 if (b.isGhost) drawGhost(b.x, b.y, 0.9);
@@ -917,11 +953,40 @@
 
     function drawBalloon(x, y, text) {
         ctx.save(); ctx.translate(x, y);
-        ctx.font = "bold 13px 'Courier New', monospace";
-        let w = ctx.measureText(text).width + 16;
-        ctx.fillStyle = "white"; ctx.fillRect(-w/2, -26, w, 26); ctx.fillRect(-2, 0, 4, 8);
+        ctx.font = "bold 12px 'Courier New', monospace";
+        
+        let lines = text.split('\n');
+        if (lines.length === 1 && ctx.measureText(text).width > 120) {
+            lines = [];
+            let words = text.split(' ');
+            let currentLine = '';
+            for(let i=0; i<words.length; i++){
+                let testLine = currentLine + words[i] + ' ';
+                if(ctx.measureText(testLine).width > 120 && i > 0){
+                    lines.push(currentLine.trim());
+                    currentLine = words[i] + ' ';
+                } else {
+                    currentLine = testLine;
+                }
+            }
+            lines.push(currentLine.trim());
+        }
+
+        let lineHeight = 16; 
+        let boxHeight = lines.length * lineHeight + 10;
+        let maxWidth = Math.max(...lines.map(l => ctx.measureText(l).width));
+        let w = maxWidth + 20; 
+        
+        ctx.fillStyle = "white"; 
+        ctx.fillRect(-w/2, -boxHeight - 8, w, boxHeight); 
+        ctx.fillRect(-2, -8, 4, 8); 
+        
         ctx.fillStyle = "black"; ctx.textAlign = "center"; ctx.textBaseline = "middle";
-        ctx.fillText(text, 0, -13);
+        lines.forEach((line, i) => {
+            let ly = -boxHeight - 8 + 5 + (i * lineHeight) + (lineHeight/2);
+            ctx.fillText(line, 0, ly);
+        });
+        
         ctx.restore();
     }
 
@@ -989,6 +1054,7 @@
             isMouseDown = true; lastMouseX = pos.x; lastMouseY = pos.y; drawTerrainAt(pos.x, pos.y);
         } else if (gameState === 'PLACING') {
             if (pos.x > 400) { modalText.innerHTML = "Toque na SUA Tela!"; return; }
+            playPlaceSound();
             players[placedFriends * 2] = { name: matchNames[placedFriends], x: pos.x, y: terrain[Math.floor(pos.x)], vx: 0, vy: 0, team: 0, alive: true, taunt: null, hasSuperBomb: false };
             placedFriends++;
             
@@ -1031,7 +1097,7 @@
 
     function placeBots() {
         for (let i = 0; i < 3; i++) {
-            let bx = 450 + Math.random() * 300;
+            let bx = 450 + (i * 100) + Math.random() * 80;
             players[i * 2 + 1] = { name: matchNames[3 + i], x: bx, y: terrain[Math.floor(bx)], vx: 0, vy: 0, team: 1, alive: true, taunt: null, hasSuperBomb: false };
         }
     }
@@ -1072,6 +1138,7 @@
     function executeJump(direction) {
         actionInProgress = true; savedTrajectory = []; savedAim = null;
         let p = players[currentPlayerIndex];
+        playJumpSound();
         p.vy = -3.5; p.vx = direction * 1.5; 
         for(let i=0; i<4; i++) explosions.push({ x: p.x, y: p.y, radius: 2, life: 10, type: 'smoke' });
         setTimeout(finishAction, 800); 
@@ -1116,8 +1183,7 @@
                     p.alive = false; killedSomeone = true;
                     bloodPuddles.push({ x: p.x });
                     
-                    playGhostSound();
-                    ghosts.push({ x: p.x, y: p.y - 10, life: 150, maxLife: 150 });
+                    dyingPlayers.push({ x: p.x, y: p.y, killer: shooterName, life: 120 });
                     
                     showDramaticMessage(`${shooterName}\nELIMINOU\n${p.name}!`, '#ff3333');
                     for(let i=0; i<8; i++) explosions.push({ x: p.x, y: p.y - 10, radius: 4, life: 20, type: 'smoke' });
@@ -1128,9 +1194,9 @@
         if (!players[currentPlayerIndex].alive) actionsLeft = 0; 
 
         let delay = 1000;
-        if (killedSomeone) delay = 3000; 
+        if (killedSomeone) delay = 5000; 
         else {
-            let hasTaunt = triggerMissTaunt(ex, ey);
+            let hasTaunt = triggerMissTaunt(ex, ey, shooterName);
             if(hasTaunt) delay = 4000; 
         }
 
@@ -1169,7 +1235,6 @@
         
         let bot = players[currentPlayerIndex];
 
-        // IA das Caixas: Prioriza coletar caixas no próprio campo
         let myBoxes = activeBoxes.filter(b => b.x >= 400 && b.x <= WORLD_W);
         if (myBoxes.length > 0) {
             let targetBox = myBoxes.sort((a,b) => Math.abs(a.x - bot.x) - Math.abs(b.x - bot.x))[0];
@@ -1180,7 +1245,6 @@
             }
         }
 
-        // Se não foi coletar caixa, atira
         let targets = players.filter(p => p && p.team === 0 && p.alive);
         if (targets.length === 0) return;
         
@@ -1224,7 +1288,7 @@
             let vencedores = players.filter(p => p && p.team === 0).map(p => p.name).join('<br>');
             centerModal.style.display = 'flex';
             modalText.innerHTML = `<span style="color:#aaffaa; font-size: 20px;">🏆 VITÓRIA!</span><br><br><span style="font-size: 14px;">Vencedores:</span><br><span style="color:#fff">${vencedores}</span>`;
-            setTimeout(() => { showStartScreen(); }, 4000); // 4 Segundos e volta pro inicio
+            setTimeout(() => { showStartScreen(); }, 8000); 
         }
         else if (friendsAlive === 0 && botsAlive > 0) { 
             gameState = 'GAME_OVER'; 
@@ -1234,7 +1298,7 @@
             let vencedores = players.filter(p => p && p.team === 1).map(p => p.name).join('<br>');
             centerModal.style.display = 'flex';
             modalText.innerHTML = `<span style="color:#ff4444; font-size: 20px;">💀 DERROTA!</span><br><br><span style="font-size: 14px;">Vencedores:</span><br><span style="color:#fff">${vencedores}</span>`;
-            setTimeout(() => { showStartScreen(); }, 4000); 
+            setTimeout(() => { showStartScreen(); }, 8000); 
         }
     }
 
