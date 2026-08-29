@@ -302,7 +302,7 @@
     
     const ALL_NAMES = [
         "Morg", "Vitor", "Wagner", "V", "CAP", "Cleber", "nomaR", "Will", "Coronel", 
-        "Master", "DAI", "Lutika", "Drih", "Edson", "GUI Aranha", "Gabriel", "Fred", 
+        "Master", "DAI", "Lutika", "Drih", "Edson", "Gui", "Gabriel", "Fred", 
         "Lurmito", "Odyssay"
     ];
 
@@ -314,6 +314,16 @@
         "{name}, ATIRA IGUAL MINHA AVÓ!", "DESISTE, {name}!", "MIROU NO VENTO, {name}?",
         "{name}, TÁ COM MEDO?", "ESSE É O SEU MELHOR, {name}?", "{name}, NEM FEZ CÓCEGAS!",
         "VAI TREINAR, {name}!"
+    ];
+
+    const REVENGE_PHRASES = [
+        "VOU ME VINGAR,\n{name}!",
+        "VOCÊ ME PAGA,\n{name}!",
+        "NÃO DESCANSAREI,\n{name}!",
+        "VOU TE ASSOMBRAR,\n{name}!",
+        "TEM UM C* AQUI,\n{name}!",
+        "MALDITO,\n{name}!",
+        "GOLPE DE SORTE,\n{name}!"
     ];
 
     const SCREEN_W = 400;
@@ -341,7 +351,7 @@
     let projectile = null;
     let explosions = [];
     let bloodPuddles = []; 
-    let dyingPlayers = []; // Nova matriz para o grito de dor!
+    let dyingPlayers = []; 
     let ghosts = []; 
     let victoryBots = []; 
     let activeBoxes = []; 
@@ -688,7 +698,6 @@
             }
         });
 
-        // Atualiza a vida dos soldados morrendo (gritando)
         dyingPlayers.forEach(d => {
             d.life--;
             if (d.life <= 0) {
@@ -881,9 +890,8 @@
             drawSoldier(p.x, p.y, p.team, (gameState === 'PLAYING' && index === currentPlayerIndex && !actionInProgress));
         });
 
-        // Grito de Vingança
         dyingPlayers.forEach(d => {
-            drawBalloon(d.x, d.y - 5, `VOU ME VINGAR,\n${d.killer.toUpperCase()}!`);
+            drawBalloon(d.x, d.y - 5, d.text);
         });
 
         if (gameState === 'GAME_OVER') {
@@ -953,7 +961,7 @@
 
     function drawBalloon(x, y, text) {
         ctx.save(); ctx.translate(x, y);
-        ctx.font = "bold 12px 'Courier New', monospace";
+        ctx.font = "bold 13px 'Courier New', monospace";
         
         let lines = text.split('\n');
         if (lines.length === 1 && ctx.measureText(text).width > 120) {
@@ -1183,7 +1191,8 @@
                     p.alive = false; killedSomeone = true;
                     bloodPuddles.push({ x: p.x });
                     
-                    dyingPlayers.push({ x: p.x, y: p.y, killer: shooterName, life: 120 });
+                    let revengeMsg = REVENGE_PHRASES[Math.floor(Math.random() * REVENGE_PHRASES.length)].replace('{name}', shooterName.toUpperCase());
+                    dyingPlayers.push({ x: p.x, y: p.y, text: revengeMsg, life: 120 });
                     
                     showDramaticMessage(`${shooterName}\nELIMINOU\n${p.name}!`, '#ff3333');
                     for(let i=0; i<8; i++) explosions.push({ x: p.x, y: p.y - 10, radius: 4, life: 20, type: 'smoke' });
