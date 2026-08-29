@@ -9,7 +9,7 @@
     <title>Combate!</title>
     <style>
         body {
-            background-color: #87CEEB; 
+            background-color: #111; 
             color: #fff;
             font-family: sans-serif; 
             text-align: center;
@@ -30,7 +30,7 @@
         }
         canvas {
             background-color: transparent;
-            image-rendering: pixelated;
+            image-rendering: pixelated; /* Garante que o desenho não borre (fique pixelado) */
             width: 100%;
             height: 100%;
             object-fit: cover;
@@ -52,13 +52,13 @@
             max-width: 380px;
         }
         .modal-box {
-            background: rgba(0, 0, 0, 0.65);
+            background: rgba(0, 0, 0, 0.7);
             padding: 12px 18px;
             border-radius: 12px;
             font-size: 16px;
-            font-weight: 500;
+            font-weight: bold;
             margin-bottom: 15px;
-            box-shadow: 0 4px 15px rgba(0,0,0,0.4);
+            box-shadow: 0 4px 15px rgba(0,0,0,0.5);
             line-height: 1.4;
             backdrop-filter: blur(4px);
         }
@@ -73,7 +73,6 @@
             cursor: pointer;
             border-radius: 25px;
             transition: transform 0.1s;
-            box-shadow: 0 4px 10px rgba(0,0,0,0.3);
         }
         #btn-action:active { transform: translateY(3px) scale(0.95); }
 
@@ -83,7 +82,7 @@
             top: 35%;
             left: 50%;
             transform: translate(-50%, -50%);
-            font-size: 22px; 
+            font-size: 20px; 
             font-weight: 900;
             color: #ff3333;
             text-shadow: 2px 2px 0 #000, -1px -1px 0 #fff;
@@ -104,7 +103,7 @@
             100% { transform: translate(-50%, -50%) scale(1); opacity: 1; }
         }
 
-        /* --- BARRA INFERIOR MINIMALISTA E MAIOR --- */
+        /* --- BARRA INFERIOR MINIMALISTA --- */
         #bottom-bar {
             position: absolute;
             bottom: 0;
@@ -120,7 +119,6 @@
             padding: 15px 20px;
             box-sizing: border-box;
             z-index: 30;
-            box-shadow: 0 -5px 20px rgba(0,0,0,0.5);
         }
 
         .row-ui {
@@ -138,7 +136,6 @@
             font-weight: bold;
         }
 
-        /* Botões Minimalistas */
         .minimal-btn {
             pointer-events: auto;
             background: transparent;
@@ -151,11 +148,7 @@
             cursor: pointer;
             transition: all 0.2s ease;
         }
-        .minimal-btn.active {
-            background: white;
-            color: black;
-            border-color: white;
-        }
+        .minimal-btn.active { background: white; color: black; border-color: white; }
         .minimal-btn.danger { color: #ff5555; border-color: rgba(255,85,85,0.4); }
         .minimal-btn.danger:active { background: #ff5555; color: white; }
 
@@ -196,33 +189,26 @@
             display: none;
             pointer-events: none;
         }
-
     </style>
 </head>
 <body>
 
     <div id="game-container">
-        <!-- Canvas ocupando a tela toda -->
         <canvas id="gameCanvas" width="400" height="700"></canvas>
         
-        <!-- Texto Dramático Abate -->
         <div id="dramatic-kill">ELIMINADO!</div>
 
-        <!-- Textos Fases Iniciais -->
         <div id="center-modal">
             <div class="modal-box" id="modal-text">Desenhe o terreno com o dedo da esquerda para a direita</div>
             <button id="btn-action" onclick="nextPhase()">Pronto</button>
         </div>
 
-        <!-- UI INFERIOR MINIMALISTA -->
         <div id="bottom-bar">
-            <!-- Linha 1: Status e Reiniciar -->
             <div class="row-ui">
                 <span id="status-text">Terreno</span>
                 <button class="minimal-btn danger" onclick="resetGame()">Reiniciar</button>
             </div>
             
-            <!-- Linha 2: Ações e Alternar Tela -->
             <div class="row-ui" id="action-area" style="display:none;">
                 <div style="display: flex; gap: 10px;">
                     <button id="btn-shoot" class="minimal-btn active" onclick="setAction('SHOOT')">Atirar</button>
@@ -231,7 +217,6 @@
                 <button class="minimal-btn" onclick="toggleScreen()">Alternar Tela</button>
             </div>
             
-            <!-- Linha 3: Joystick -->
             <div id="joystick-zone">
                 <div id="joy-cancel">CANCELAR</div>
                 <div id="joystick-knob"></div>
@@ -243,6 +228,7 @@
     const canvas = document.getElementById('gameCanvas');
     const ctx = canvas.getContext('2d');
     
+    // UI Elements
     const centerModal = document.getElementById('center-modal');
     const modalText = document.getElementById('modal-text');
     const btnAction = document.getElementById('btn-action');
@@ -251,15 +237,15 @@
     const btnShoot = document.getElementById('btn-shoot');
     const btnJump = document.getElementById('btn-jump');
     const dramaticKill = document.getElementById('dramatic-kill');
-    
     const joystickZone = document.getElementById('joystick-zone');
     const joystickKnob = document.getElementById('joystick-knob');
     const joyCancel = document.getElementById('joy-cancel');
 
-    // Imagem de Fundo
+    // Imagem de Fundo (Sistema Aleatório)
+    const BGS = ['assets/img/fundo.png', 'assets/img/fundo2.png', 'assets/img/fundo3.png', 'assets/img/fundo4.png'];
     const bgImage = new Image();
-    bgImage.src = 'assets/img/fundo.png';
-
+    let terrainColor = '#1c5e20'; // Grama escura realista
+    
     const ALL_NAMES = ["Morg", "Vitor", "Wagner", "V", "CAP", "Cleber", "nomaR", "Will", "Coronel", "Master", "DAI", "Lutika", "Drih"];
     const TAUNTS = [
         "HAHAHA!", "ERROU!", "VC É RUIM!", "FRACO!", 
@@ -281,13 +267,11 @@
     let currentAction = 'SHOOT'; 
     let actionInProgress = false; 
 
-    // Joystick e Mira
     let isDraggingJoy = false;
     let isCancelingJoy = false;
     let joyAimDx = 0;
     let joyAimDy = 0;
 
-    // Mecânica de Desenho
     let isMouseDown = false;
     let lastMouseX = -1, lastMouseY = -1;
     
@@ -295,7 +279,7 @@
     let projectile = null;
     let explosions = [];
     let bloodPuddles = []; 
-    let ghosts = []; // Matriz dos fantasmas
+    let ghosts = []; 
     let activeBox = null;
     let shotsUntilDrop = 5;
 
@@ -323,10 +307,8 @@
         osc.frequency.exponentialRampToValueAtTime(100, audioCtx.currentTime + 0.5);
         gain.gain.setValueAtTime(0.3, audioCtx.currentTime);
         gain.gain.exponentialRampToValueAtTime(0.01, audioCtx.currentTime + 0.5);
-        osc.connect(gain);
-        gain.connect(audioCtx.destination);
-        osc.start();
-        osc.stop(audioCtx.currentTime + 0.5);
+        osc.connect(gain); gain.connect(audioCtx.destination);
+        osc.start(); osc.stop(audioCtx.currentTime + 0.5);
     }
 
     function playExplosionSound() {
@@ -345,13 +327,39 @@
         let gain = audioCtx.createGain();
         gain.gain.setValueAtTime(0.8, audioCtx.currentTime);
         gain.gain.exponentialRampToValueAtTime(0.01, audioCtx.currentTime + 0.8);
-        noise.connect(filter);
-        filter.connect(gain);
-        gain.connect(audioCtx.destination);
+        noise.connect(filter); filter.connect(gain); gain.connect(audioCtx.destination);
         noise.start();
     }
 
-    // --- FULLSCREEN ---
+    function playPowerupSound() {
+        if (!audioCtx) return;
+        let osc = audioCtx.createOscillator();
+        let gain = audioCtx.createGain();
+        osc.type = 'square';
+        osc.frequency.setValueAtTime(300, audioCtx.currentTime);
+        osc.frequency.setValueAtTime(400, audioCtx.currentTime + 0.1);
+        osc.frequency.setValueAtTime(600, audioCtx.currentTime + 0.2);
+        osc.frequency.setValueAtTime(800, audioCtx.currentTime + 0.3);
+        gain.gain.setValueAtTime(0.3, audioCtx.currentTime);
+        gain.gain.exponentialRampToValueAtTime(0.01, audioCtx.currentTime + 0.4);
+        osc.connect(gain); gain.connect(audioCtx.destination);
+        osc.start(); osc.stop(audioCtx.currentTime + 0.4);
+    }
+
+    function playGhostSound() {
+        if (!audioCtx) return;
+        let osc = audioCtx.createOscillator();
+        let gain = audioCtx.createGain();
+        osc.type = 'sine';
+        osc.frequency.setValueAtTime(300, audioCtx.currentTime);
+        osc.frequency.linearRampToValueAtTime(400, audioCtx.currentTime + 1);
+        osc.frequency.linearRampToValueAtTime(200, audioCtx.currentTime + 2.5);
+        gain.gain.setValueAtTime(0.6, audioCtx.currentTime);
+        gain.gain.exponentialRampToValueAtTime(0.01, audioCtx.currentTime + 2.5);
+        osc.connect(gain); gain.connect(audioCtx.destination);
+        osc.start(); osc.stop(audioCtx.currentTime + 2.5);
+    }
+
     function forceFullScreen() {
         initAudio(); 
         let elem = document.documentElement;
@@ -361,7 +369,6 @@
         }
     }
 
-    // --- MENSAGEM DRAMÁTICA ---
     function showDramaticMessage(text, color = '#ff3333') {
         dramaticKill.innerText = text;
         dramaticKill.style.color = color;
@@ -378,6 +385,17 @@
     }
 
     function initGame() {
+        // Seleção do Fundo Aleatório e Cor da Terra
+        let currentBgSrc = BGS[Math.floor(Math.random() * BGS.length)];
+        bgImage.src = currentBgSrc;
+        
+        // Se for fundo2, cor simbolizando Terra. Senão, verde grama escuro
+        if(currentBgSrc.includes('fundo2')) {
+            terrainColor = '#5c4033'; // Marrom Terra
+        } else {
+            terrainColor = '#1c5e20'; // Verde Realista Escuro
+        }
+
         gameState = 'DRAWING';
         terrain = new Array(WORLD_W).fill(canvas.height - 350); 
         players = new Array(6).fill(null);
@@ -418,12 +436,7 @@
         currentAction = actionType;
         btnShoot.classList.toggle('active', actionType === 'SHOOT');
         btnJump.classList.toggle('active', actionType === 'JUMP');
-        
-        if (actionType === 'SHOOT') {
-            joystickZone.style.display = 'block';
-        } else {
-            joystickZone.style.display = 'none';
-        }
+        joystickZone.style.display = (actionType === 'SHOOT') ? 'block' : 'none';
     }
 
     // --- LÓGICA DO JOYSTICK ---
@@ -494,14 +507,13 @@
 
     // --- LÓGICA DE CAIXAS (DROPS) ---
     function spawnBox() {
-        let typeRand = Math.random();
-        let type = typeRand < 0.4 ? '+1' : (typeRand < 0.8 ? '+2' : 'REVIVE');
+        let type = Math.random() < 0.6 ? 'SUPERBOMBA' : 'VIDA';
         let bx = 50 + Math.random() * 700;
-        activeBox = { x: bx, y: terrain[Math.floor(bx)] - 15, type: type };
+        activeBox = { x: bx, y: -50, falling: true, type: type }; // Nasce no céu
     }
 
     function checkBoxCollision() {
-        if (!activeBox) return;
+        if (!activeBox || activeBox.falling) return; // Só pega quando tocar no chão
         players.forEach(p => {
             if (p && p.alive) {
                 if (Math.hypot(p.x - activeBox.x, p.y - activeBox.y) < 25) {
@@ -514,13 +526,15 @@
     function openBox(p) {
         if (!activeBox) return;
         let t = activeBox.type;
+        playPowerupSound();
         
-        if (t === '+1' || t === '+2') {
+        if (t === 'SUPERBOMBA') {
             if (p.team === players[currentPlayerIndex].team) {
-                actionsLeft += (t === '+1' ? 1 : 2);
-                showDramaticMessage(`${p.name} PEGOU ${t} AÇÃO!`, '#aaffaa');
+                actionsLeft += 1;
+                p.hasSuperBomb = true; // Flag para a super explosão
+                showDramaticMessage(`${p.name}\nPEGOU SUPERBOMBA!\n+1 Ação`, '#ffaa00');
             }
-        } else if (t === 'REVIVE') {
+        } else if (t === 'VIDA') {
             let deadAllies = players.filter(ally => ally && ally.team === p.team && !ally.alive);
             if (deadAllies.length > 0) {
                 let revived = deadAllies[Math.floor(Math.random() * deadAllies.length)];
@@ -555,16 +569,11 @@
             simY += simVy;
             simVy += 0.15; 
 
-            if (simX < 0 || simX >= WORLD_W || simY > canvas.height + 50) {
-                return 'rgba(255, 51, 51, 0.9)'; 
-            }
+            if (simX < 0 || simX >= WORLD_W || simY > canvas.height + 50) return 'rgba(255, 51, 51, 0.9)'; 
 
             if (simY >= terrain[Math.floor(simX)]) {
-                if (simX < SCREEN_W) {
-                    return 'rgba(255, 51, 51, 0.9)'; 
-                } else {
-                    return 'rgba(255, 255, 255, 0.9)'; 
-                }
+                if (simX < SCREEN_W) return 'rgba(255, 51, 51, 0.9)'; // Caiu no próprio campo = Vermelho
+                else return 'rgba(255, 255, 255, 0.9)'; // Inimigo = Branco
             }
             steps++;
         }
@@ -583,14 +592,19 @@
         // Atualiza a posição da caixa caindo
         if (activeBox) {
             let groundY = terrain[Math.floor(activeBox.x)];
-            if (activeBox.y < groundY - 12) activeBox.y += 3;
-            else activeBox.y = groundY - 12;
+            if (activeBox.y < groundY - 12) {
+                activeBox.y += 1.5; // Cai lentamente
+                activeBox.falling = true;
+            } else {
+                activeBox.y = groundY - 12;
+                activeBox.falling = false;
+            }
         }
 
-        // Atualiza Fantasmas
+        // Fantasmas subindo ao céu
         ghosts.forEach(g => {
-            g.y -= 1; // Sobe
-            g.x += Math.sin(g.life * 0.1) * 0.5; // Zigue-zague
+            g.y -= 1.5; 
+            g.x += Math.sin(g.life * 0.1) * 0.5; 
             g.life--;
         });
         ghosts = ghosts.filter(g => g.life > 0);
@@ -635,12 +649,13 @@
                 }
 
                 if (projectile.x < 0 || projectile.x > WORLD_W || projectile.y > canvas.height + 50) {
+                    let wasSuper = projectile.isSuper;
                     saveAndClearProjectile();
                     let hasTaunt = triggerMissTaunt(-100, -100); 
                     setTimeout(finishAction, hasTaunt ? 4000 : 1000); 
                 } 
                 else if (projectile.y >= terrain[Math.floor(projectile.x)]) {
-                    triggerExplosion(projectile.x, projectile.y);
+                    triggerExplosion(projectile.x, projectile.y, projectile.isSuper);
                     saveAndClearProjectile();
                 }
             }
@@ -684,17 +699,15 @@
             ctx.fillRect(0, 0, WORLD_W, canvas.height);
         }
 
-        // Poças de Sangue
+        // Poças de Sangue Pixeladas (no fundo)
         bloodPuddles.forEach(b => {
             let gy = terrain[Math.floor(b.x)];
             ctx.fillStyle = 'rgba(150, 0, 0, 0.8)';
-            ctx.beginPath();
-            ctx.ellipse(b.x, gy, 15, 5, 0, 0, Math.PI * 2);
-            ctx.fill();
+            ctx.fillRect(b.x - 15, gy - 2, 30, 4); // Pixelado
         });
 
-        // Terreno
-        ctx.fillStyle = '#2e8b57';
+        // Terreno Dinâmico
+        ctx.fillStyle = terrainColor;
         ctx.beginPath(); ctx.moveTo(0, canvas.height);
         for (let x = 0; x < WORLD_W; x++) ctx.lineTo(x, terrain[x]);
         ctx.lineTo(WORLD_W, canvas.height); ctx.fill();
@@ -703,7 +716,21 @@
         if (activeBox) {
             ctx.save();
             ctx.translate(activeBox.x, activeBox.y);
-            if (activeBox.type === 'REVIVE') {
+            
+            // Desenha Paraquedas se caindo
+            if (activeBox.falling) {
+                ctx.fillStyle = '#ffffff'; // Paraquedas branco
+                ctx.fillRect(-15, -35, 30, 10);
+                ctx.strokeStyle = '#fff';
+                ctx.lineWidth = 1;
+                ctx.beginPath();
+                ctx.moveTo(-15, -25); ctx.lineTo(-6, -12);
+                ctx.moveTo(15, -25); ctx.lineTo(6, -12);
+                ctx.stroke();
+            }
+
+            // Caixa
+            if (activeBox.type === 'VIDA') {
                 ctx.fillStyle = (Math.floor(Date.now() / 150) % 2) ? '#ffffaa' : '#ffffff'; 
             } else {
                 ctx.fillStyle = '#ffaa00';
@@ -713,10 +740,10 @@
             ctx.lineWidth = 2;
             ctx.strokeRect(-12, -12, 24, 24);
             ctx.fillStyle = '#000';
-            ctx.font = 'bold 12px sans-serif';
+            ctx.font = 'bold 16px sans-serif';
             ctx.textAlign = 'center';
             ctx.textBaseline = 'middle';
-            let txt = activeBox.type === 'REVIVE' ? '💖' : activeBox.type;
+            let txt = activeBox.type === 'VIDA' ? '❤' : 'S';
             ctx.fillText(txt, 0, 0);
             ctx.restore();
         }
@@ -753,30 +780,25 @@
             drawSoldier(p.x, p.y, p.team, (gameState === 'PLAYING' && index === currentPlayerIndex && !actionInProgress));
         });
 
-        // Desenhar Fantasmas Subindo ao Céu
+        // Desenhar Fantasmas Pixelados
         ghosts.forEach(g => {
             ctx.save();
-            ctx.globalAlpha = (g.life / g.maxLife) * 0.8; // Transparência gradual
+            ctx.globalAlpha = (g.life / g.maxLife) * 0.8; 
             ctx.translate(g.x, g.y);
             
-            // Corpo do Fantasma
             ctx.fillStyle = 'rgba(220, 240, 255, 0.9)';
-            ctx.beginPath();
-            ctx.arc(0, -15, 8, Math.PI, 0); 
-            ctx.lineTo(8, 0);
-            ctx.lineTo(5, -3);
-            ctx.lineTo(2, 0);
-            ctx.lineTo(-2, -3);
-            ctx.lineTo(-5, 0);
-            ctx.lineTo(-8, -3);
-            ctx.closePath();
-            ctx.fill();
-
-            // Olhinhos e Boca
+            // Corpo fantasma quadriculado
+            ctx.fillRect(-8, -15, 16, 12);
+            ctx.fillRect(-6, -18, 12, 3);
+            // Tentaculos
+            ctx.fillRect(-8, -3, 4, 3);
+            ctx.fillRect(-2, -3, 4, 3);
+            ctx.fillRect(4, -3, 4, 3);
+            // Olhinhos e Boca Assustada
             ctx.fillStyle = 'black';
-            ctx.fillRect(-4, -18, 2, 2);
-            ctx.fillRect(2, -18, 2, 2);
-            ctx.fillRect(-1, -13, 2, 3);
+            ctx.fillRect(-5, -12, 2, 2);
+            ctx.fillRect(3, -12, 2, 2);
+            ctx.fillRect(-2, -8, 4, 4);
             
             ctx.restore();
         });
@@ -784,7 +806,6 @@
         // Mira atual do Joystick
         if (gameState === 'PLAYING' && isDraggingJoy && currentAction === 'SHOOT' && players[currentPlayerIndex].team === 0 && !actionInProgress && !isCancelingJoy) {
             let p = players[currentPlayerIndex];
-            
             let aimColor = getAimColor(p, joyAimDx, joyAimDy);
 
             ctx.strokeStyle = aimColor; 
@@ -797,19 +818,20 @@
 
         if (projectile) drawMissile(projectile.x, projectile.y, projectile.vx, projectile.vy);
 
-        // Explosões e Fumaça
+        // Explosões e Fumaça em PIXEL ART (Usando Blocos em vez de círculos)
         explosions.forEach(exp => {
+            let r = exp.radius;
             if (exp.type === 'smoke') {
                 ctx.fillStyle = `rgba(200, 200, 200, ${exp.life / 10})`;
-                ctx.beginPath(); ctx.arc(exp.x, exp.y, exp.radius, 0, Math.PI * 2); ctx.fill();
+                ctx.fillRect(exp.x - r, exp.y - r, r*2, r*2);
             } else if (exp.type === 'sparkle') {
+                let sr = r * (1 - exp.life/25) + 10;
                 ctx.fillStyle = `rgba(255, 255, 100, ${exp.life / 25})`;
-                ctx.beginPath(); ctx.arc(exp.x, exp.y, exp.radius * (1 - exp.life/25) + 10, 0, Math.PI * 2); ctx.fill();
+                ctx.fillRect(exp.x - sr, exp.y - sr, sr*2, sr*2);
             } else {
+                let er = r * (1 - exp.life/25) + 3;
                 ctx.fillStyle = `rgba(255, ${80 + exp.life * 5}, 0, ${exp.life / 25})`;
-                ctx.beginPath();
-                let r = exp.radius * (1 - exp.life/25) + 3;
-                ctx.arc(exp.x, exp.y, r, 0, Math.PI * 2); ctx.fill();
+                ctx.fillRect(exp.x - er, exp.y - er, er*2, er*2);
             }
         });
 
@@ -842,21 +864,23 @@
     }
 
     function drawNamesUI() {
-        ctx.font = "bold 12px Courier New";
+        ctx.font = "bold 16px 'Courier New', monospace"; // Aumentado!
         ctx.textAlign = "center";
         ctx.textBaseline = "top";
+        
+        // Espaçamento ajustado na tela (60, 200, 340)
         for(let i = 0; i < 3; i++) {
             let p = players[i * 2];
             if (p) {
                 ctx.fillStyle = p.alive ? '#ffffff' : '#ff4444';
-                ctx.fillText(p.name, 100 + (i * 90), 20);
+                ctx.fillText(p.name, 60 + (i * 140), 20);
             }
         }
         for(let i = 0; i < 3; i++) {
             let p = players[i * 2 + 1];
             if (p) {
                 ctx.fillStyle = p.alive ? '#ffffff' : '#ff4444';
-                ctx.fillText(p.name, 500 + (i * 90), 20);
+                ctx.fillText(p.name, 460 + (i * 140), 20);
             }
         }
     }
@@ -871,6 +895,14 @@
         ctx.fillStyle = '#ffdbac'; ctx.fillRect(-4, -10, 8, 5); 
         ctx.fillStyle = 'black'; ctx.fillRect(-2, -8, 1, 1); ctx.fillRect(1, -8, 1, 1); 
         ctx.fillStyle = '#444'; ctx.fillRect(team === 0 ? 3 : -7, -14, 4, 10); 
+
+        // Se tem superbomba, pisca
+        if (players.find(p => p.x === x && p.y === y && p.hasSuperBomb)) {
+            if (Math.floor(Date.now() / 150) % 2) {
+                ctx.fillStyle = 'rgba(255, 165, 0, 0.5)';
+                ctx.fillRect(-8, -18, 16, 18);
+            }
+        }
 
         if (isActive && (Math.floor(Date.now() / 250) % 2)) {
             ctx.fillStyle = 'yellow'; ctx.beginPath();
@@ -909,7 +941,7 @@
             isMouseDown = true; lastMouseX = pos.x; lastMouseY = pos.y; drawTerrainAt(pos.x, pos.y);
         } else if (gameState === 'PLACING') {
             if (pos.x > 400) { modalText.innerHTML = "Toque na SUA Tela!"; return; }
-            players[placedFriends * 2] = { name: matchNames[placedFriends], x: pos.x, y: terrain[Math.floor(pos.x)], vx: 0, vy: 0, team: 0, alive: true, taunt: null };
+            players[placedFriends * 2] = { name: matchNames[placedFriends], x: pos.x, y: terrain[Math.floor(pos.x)], vx: 0, vy: 0, team: 0, alive: true, taunt: null, hasSuperBomb: false };
             placedFriends++;
             
             if (placedFriends >= 3) { 
@@ -958,7 +990,7 @@
     function placeBots() {
         for (let i = 0; i < 3; i++) {
             let bx = 450 + Math.random() * 300;
-            players[i * 2 + 1] = { name: matchNames[3 + i], x: bx, y: terrain[Math.floor(bx)], vx: 0, vy: 0, team: 1, alive: true, taunt: null };
+            players[i * 2 + 1] = { name: matchNames[3 + i], x: bx, y: terrain[Math.floor(bx)], vx: 0, vy: 0, team: 1, alive: true, taunt: null, hasSuperBomb: false };
         }
     }
 
@@ -1007,8 +1039,9 @@
         savedAim = null;
         let p = players[currentPlayerIndex];
         
-        p.vy = -4.5; 
-        p.vx = direction * 2.5; 
+        // Pulo Reduzido
+        p.vy = -3.5; 
+        p.vx = direction * 1.5; 
         
         for(let i=0; i<4; i++) explosions.push({ x: p.x, y: p.y, radius: 2, life: 10, type: 'smoke' });
         setTimeout(finishAction, 800); 
@@ -1019,26 +1052,28 @@
         currentTrajectory = []; 
         savedAim = { dx: rawDx, dy: rawDy }; 
         let p = players[currentPlayerIndex];
-        projectile = { x: p.x, y: p.y - 15, vx: vx, vy: vy };
+        
+        // Ativa Superbomba e limpa o status
+        let isSuper = p.hasSuperBomb;
+        p.hasSuperBomb = false; 
+
+        projectile = { x: p.x, y: p.y - 15, vx: vx, vy: vy, isSuper: isSuper };
         
         playShootSound(); 
         for(let i=0; i<5; i++) explosions.push({ x: p.x + (Math.random()-0.5)*10, y: p.y - 15 + (Math.random()-0.5)*10, radius: 3, life: 15, type: 'smoke' });
         
         shotsUntilDrop--;
-        if (shotsUntilDrop <= 0 && !activeBox) {
-            spawnBox();
-        }
+        if (shotsUntilDrop <= 0 && !activeBox) spawnBox();
     }
 
-    function triggerExplosion(ex, ey) {
+    function triggerExplosion(ex, ey, isSuper) {
         playExplosionSound(); 
 
-        const radius = 30;
+        const radius = isSuper ? 60 : 30; // DOBRO DO PODER SE FOR SUPER!
         explosions.push({ x: ex, y: ey, radius: radius, life: 25, type: 'explosion' });
         
         let shooterName = players[currentPlayerIndex] ? players[currentPlayerIndex].name : "Fantasma";
         let killedSomeone = false;
-
         let maxDepth = canvas.height - 245; 
 
         for (let x = Math.floor(ex - radius); x <= Math.floor(ex + radius); x++) {
@@ -1055,9 +1090,10 @@
                 if (dist <= radius + 5) {
                     p.alive = false;
                     killedSomeone = true;
-                    
-                    // Sangue e Fantasma
                     bloodPuddles.push({ x: p.x });
+                    
+                    // Som e Fantasma
+                    playGhostSound();
                     ghosts.push({ x: p.x, y: p.y - 10, life: 150, maxLife: 150 });
                     
                     showDramaticMessage(`${shooterName}\nELIMINOU\n${p.name}!`, '#ff3333');
@@ -1066,10 +1102,17 @@
             }
         });
 
+        // CORREÇÃO: Se o soldado explodir a si mesmo, perde o turno!
+        if (!players[currentPlayerIndex].alive) {
+            actionsLeft = 0;
+        }
+
         let delay = 1000;
-        if (!killedSomeone) {
+        if (killedSomeone) {
+            delay = 3000; // Tempo do fantasma subir ao céu
+        } else {
             let hasTaunt = triggerMissTaunt(ex, ey);
-            if(hasTaunt) delay = 4000; 
+            if(hasTaunt) delay = 4000; // 2s do balao + 2s parado na tela
         }
 
         checkWinCondition();
