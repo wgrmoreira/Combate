@@ -1,6 +1,6 @@
 {
   "name": "combate-16",
-  "version": "1.3.0",
+  "version": "1.4.0",
   "private": true,
   "description": "Artilharia tática em pixel art para GitHub Pages",
   "scripts": { "test": "node tests/engine.cjs" }
