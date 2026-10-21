@@ -1,9 +1,9 @@
 {
   "name": "combate-16",
-  "version": "1.5.0",
+  "version": "1.6.0",
   "private": true,
-  "description": "Artilharia tática em pixel art para GitHub Pages",
+  "description": "Artilharia tática com pixel art de arcade militar",
   "scripts": {
-    "test": "node tests/engine.cjs"
+    "test": "node tests/assets.cjs && node tests/engine.cjs"
   }
 }
