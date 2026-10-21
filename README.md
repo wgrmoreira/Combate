@@ -1,4 +1,16 @@
-# COMBATE 16 — Operação Horizonte
+# Combate 16 · versão 1.5
+
+Interface redesenhada para priorizar o campo de batalha.
+
+- Abertura ilustrada em pixel art, com soldados, bombas, aviões e explosões. O botão **INICIAR** abre a configuração de modo e dificuldade. A arte original também está em `assets/abertura-16bits.png`.
+- Barra com o nome do jogo e estatísticas removidas da partida. O topo mostra fase, pontuação por equipe (verde / vermelho), som, ajuda e pausa. Eliminações e precisão continuam na tela de resultado.
+- Campo flexível ocupa a altura disponível, com controles menores e soldados ampliados naturalmente nas telas verticais. A câmera acompanha o soldado escolhido no posicionamento.
+- Notificações pequenas no canto inferior esquerdo, com duração máxima de 2,5 segundos. Menus, tutorial e botões simplificados.
+- Paleta mais vibrante; chuva preserva mais as cores. Rajadas de traçantes sobem ao céu em intervalos de 1,7 a 3,2 segundos, sem interferir na física.
+- Campanha, pontuação, modo manual/estilingue, apoio a cada seis disparos e foco de câmera de três segundos preservados.
+
+Validação responsiva disponível em `tests/responsive.html` (390×844, 320×568 e 844×390).
+
 
 Reformulação do protótipo Combate em HTML5 Canvas, JavaScript e CSS3. Sem dependências, instalação, compilação, servidor de aplicação ou serviços externos.
 
@@ -35,7 +47,7 @@ Antes de começar, posicione seus três soldados no seu lado do campo. Selecione
 
 Os controles de força/ângulo e o botão DISPARAR continuam disponíveis como alternativa para mouse, teclado e acessibilidade. **Nenhum dos dois tiros revela a trajetória completa ou o ponto de impacto.** A mira exibe só três pontos de direção inicial. O segundo tiro mantém ângulo e força, sem mostrar o trajeto do anterior. Durante o voo, só há um rastro curto junto ao projétil. O vento não muda entre os dois tiros.
 
-**Mira manual separada:** tocar ou alterar os controles inferiores de ângulo/força seleciona o modo manual. Nesse modo, arrastar e soltar sobre o campo não arma nem dispara o estilingue; o tiro exige o botão DISPARAR ou espaço. O botão **USAR ESTILINGUE** reativa o gesto. A mira direcional ganhou pontos com contorno e uma cruz de 18 pixels de tela, mantendo a leitura no celular sem mostrar a trajetória.
+**Mira manual separada:** tocar ou alterar os controles inferiores de ângulo/força seleciona o modo manual. Nesse modo, arrastar e soltar sobre o campo não arma nem dispara o estilingue; o tiro exige o botão DISPARAR ou espaço. O botão **ESTILINGUE** reativa o gesto. A mira direcional ganhou pontos com contorno e uma cruz de 18 pixels de tela, mantendo a leitura no celular sem mostrar a trajetória.
 
 **Câmera de impacto:** quando qualquer soldado recebe dano de um tiro, a câmera centraliza o atingido e permanece nele por três segundos. Nenhum novo disparo ou troca de turno acontece nesse intervalo. O contador congela com a pausa. Até a última eliminação da fase é exibida antes de abrir o resultado.
 
@@ -126,7 +138,7 @@ Os testes adicionais cobrem atribuição de acertos e eliminações, explosões 
 
 A versão 1.4 também verifica modo manual sem disparo por arrasto, áudio ligado por padrão, três segundos completos de foco em impactos, pausa desse contador, espera antes do resultado de uma eliminação final, renderização dos assets, aviões/artilharia/cogumelos ao fundo, limites de efeitos, aumento de brilho à noite e ausência de efeitos decorativos sobre vida e pontuação.
 
-A interface foi conferida no navegador Chromium nas dimensões padrão de computador, 390 × 844, 320 × 568 e 844 × 390. Em telas muito baixas, a página pode exigir rolagem. Não houve erros de console nos testes do navegador. O toque usa Pointer Events, com tratamento de cancelamento e captura do ponteiro. A compatibilidade com Safari/iOS e outros aparelhos físicos ainda precisa de verificação nesses dispositivos; não foram executados testes em hardware real.
+A versão 1.5 foi conferida no Chromium em tela de computador e em quadros responsivos de 390 × 844, 320 × 568 e 844 × 390. Os quadros usam o jogo real dentro de um iframe com essas dimensões, disponível em tests/responsive.html. O toque usa Pointer Events, com cancelamento e captura do ponteiro. Safari/iOS e aparelhos físicos não foram testados.
 
 ## Créditos
 
