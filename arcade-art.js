@@ -59,9 +59,9 @@ globalThis.CombateArcade=(()=>{
     return c;
   });
   const outlines=sprites.map(row=>row.map(()=>make(40,48)));
-  const updateOutlines=()=>{for(let t=0;t<2;t++)for(let v=0;v<3;v++){const g=outlines[t][v].getContext('2d');g.clearRect(0,0,40,48);g.drawImage(sprites[t][v],0,0);g.globalCompositeOperation='source-in';g.fillStyle='#101c16';g.fillRect(0,0,40,48);g.globalCompositeOperation='source-over';}};
+  const updateOutlines=()=>{for(let t=0;t<2;t++)for(let v=0;v<3;v++){const g=outlines[t][v].getContext('2d');g.clearRect(0,0,40,48);g.drawImage(sprites[t][v],0,0);g.globalCompositeOperation='source-in';g.fillStyle='#fffef3';g.fillRect(0,0,40,48);g.globalCompositeOperation='source-over';}};
   updateOutlines();
-  const art={sprites,outlines,tiles,props,cover:null,scene:null,city:null,onCover:null};
+  const art={aircraft:[null,null],sprites,outlines,tiles,props,cover:null,scene:null,city:null,onCover:null};
   const script=document.currentScript?.src;
   function load(name,key){if(typeof Image==='undefined')return;const im=new Image();im.onload=()=>{art[key]=im;if(key==='cover')art.onCover?.();};im.src=script?new URL('./assets/'+name,script).href:name;}
   load('capa-arcade.png','cover');load('cenario-arcade.png','scene');load('cidade-arcade.png','city');
@@ -72,6 +72,11 @@ globalThis.CombateArcade=(()=>{
   if(typeof Image!=='undefined'){
     const ground=new Image();ground.onload=()=>{for(let i=0;i<4;i++){const g=tiles[i].getContext('2d');g.imageSmoothingEnabled=false;g.filter='saturate(.6)';g.drawImage(ground,0,0,96,96);g.filter='none';if(i){g.globalCompositeOperation='multiply';g.fillStyle=['#ffffff','#dfba9c','#a8b9ac','#e9c482'][i];g.fillRect(0,0,96,96);g.globalCompositeOperation='source-over';}}};
     ground.src=script?new URL('./assets/terreno-arcade.png',script).href:'terreno-arcade.png';
+  }
+  if(typeof Image!=='undefined'){
+    const vehicles=new Image();vehicles.onload=()=>{const cw=vehicles.width/2,ch=vehicles.height,scale=Math.min(128/cw,80/ch);
+      for(let i=0;i<2;i++){const c=make(128,80),g=c.getContext('2d');g.imageSmoothingEnabled=false;g.drawImage(vehicles,i*cw,0,cw,ch,(128-cw*scale)/2,(80-ch*scale)/2,cw*scale,ch*scale);art.aircraft[i]=c;}
+    };vehicles.src=script?new URL('./assets/aeronaves-arcade.png',script).href:'aeronaves-arcade.png';
   }
   return art;
 })();
