@@ -33,3 +33,11 @@ Gerada com image_gen integrada, preservando o trio da capa. Prompt completo: [FI
 ## Novos cenários · v1.10
 
 Deserto, Montanhas e Cidade japonesa: [prompts e arquivos finais](CENARIOS-PROMPTS.md). Gerados com image_gen integrada.
+
+## Cargueiro de apoio · v1.12
+
+[Asset e prompt completos](CARGUEIRO-PROMPT.md), criado com image_gen integrada.
+
+## Vitória entre fases · v1.13
+
+[Imagem e prompt](VITORIA-PROMPT.md), criados com image_gen integrada para preservar os heróis da abertura.
