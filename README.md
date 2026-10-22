@@ -1,8 +1,15 @@
-# COMBATE 16 · versão 1.6
+# COMBATE 16 · versão 1.7
 
 Jogo de artilharia tática em HTML5 Canvas, JavaScript e CSS. Direção de arte de arcade militar, inspirada nas referências gráficas enviadas: soldados expressivos, materiais desgastados, selva, ruínas, fumaça e fogo. Funciona como site estático no GitHub Pages, sem dependências ou compilação.
 
-## O que mudou na arte
+## Ajustes da versão 1.7
+
+- Terreno com ondas mais amplas e frequências variadas, entre 255 e 465 unidades de altura, com colinas e vales em ambos os lados.
+- Muro de alvenaria e arame no limite entre os campos, em x=600. A barreira é permanente: intercepta tiros baixos, inclusive projéteis rápidos, e bloqueia o deslocamento de soldados. É necessário lançar por cima do arame. A simulação balística da IA considera a mesma colisão.
+- Todo novo disparo começa no modo estilingue, inclusive o segundo tiro do soldado. Os controles de ângulo/força ativam a mira manual para aquele disparo. O botão de alternância foi removido.
+- A textura da terra é desenhada com saturação reduzida, preservando as cores dos soldados e do cenário. Os controles ocupam menos altura.
+
+## Arte de arcade militar
 
 - Capa original com três combatentes, ruínas tropicais, helicóptero, traçantes e grandes explosões.
 - Seis modelos de soldados em atlas PNG transparente, com uniformes aliados em verde-oliva e rivais em ferrugem. Capacetes, bandana, óculos, mochilas e rifles. Animações de respiração, deslocamento e recuo; contornos escuros e placas de nome para leitura em fundos detalhados.
@@ -14,7 +21,7 @@ As cinco imagens principais foram criadas com **image_gen**, a ferramenta integr
 
 ## Jogar e publicar
 
-Abra `index.html` mantendo os arquivos desta pasta juntos. A entrega também inclui `combate-16-v1.6.html`, com todo o código e as cinco imagens incorporados, para jogar em um único arquivo.
+Abra `index.html` mantendo os arquivos desta pasta juntos. A entrega também inclui `combate-16-v1.7.html`, com todo o código e as cinco imagens incorporados, para jogar em um único arquivo.
 
 Para publicar no GitHub Pages, extraia o ZIP e envie o conteúdo desta pasta para a raiz do repositório (ou pasta selecionada como origem do Pages). `index.html`, `style.css`, `arcade-art.js`, `war-assets.js`, `game.js`, `icon.svg`, `.nojekyll` e a pasta `assets` devem permanecer disponíveis. Configure o Pages para a branch e a pasta utilizadas. Não há backend nem chamadas a serviços externos durante a partida.
 
@@ -24,7 +31,7 @@ Para publicar no GitHub Pages, extraia o ZIP e envie o conteúdo desta pasta par
 
 Cada soldado tem dois disparos por turno. No estilingue, puxe para trás e para baixo e solte. A distância define a força; a direção define o ângulo. Um toque simples não dispara. Nenhum tiro mostra a trajetória completa.
 
-Tocar nos controles de ângulo/força ativa a mira manual: arrastar o campo não dispara nesse modo. Use **DISPARAR**; o botão **ESTILINGUE** reativa o gesto. **MIRA ANTERIOR** restaura o ajuste do último disparo. Use as setas para mover, com combustível renovado por turno. As explosões atingem aliados e inimigos.
+Cada oportunidade de tiro começa no estilingue. Tocar nos controles de ângulo/força ativa a mira manual: arrastar o campo não dispara nesse modo. Use **DISPARAR**; ao liberar o próximo tiro, o estilingue é reativado automaticamente. **MIRA ANTERIOR** restaura o ajuste do último disparo. Use as setas para mover, com combustível renovado por turno. As explosões atingem aliados e inimigos. O muro central impede passagem e disparos baixos; as explosões não o destroem.
 
 Teclado: setas laterais movem; ↑/↓ ajustam ângulo; +/− ajustam força; espaço dispara; P pausa; M alterna som; Escape cancela a puxada ou pausa. O som vem ligado e é liberado pela primeira interação, conforme a política do navegador.
 
@@ -50,6 +57,6 @@ O avião de suprimentos passa a cada seis disparos combinados e lança duas caix
 
 ## Validação
 
-Execute `npm test` com Node.js, ou `node tests/assets.cjs` e `node tests/engine.cjs`. Os testes verificam integridade dos PNGs, transparência e grade do atlas, ordem de carregamento, navegação de menus, partidas completas, pontuação, fases, mira, suprimentos, efeitos, pausa, clima e os três segundos da câmera.
+Execute `npm test` com Node.js, ou `node tests/assets.cjs` e `node tests/engine.cjs`. Os testes verificam ondulações nas duas áreas de posicionamento, colisão do muro e do arame nas duas direções, projéteis rápidos, bloqueio de movimento, reinício automático do estilingue, integridade dos PNGs, transparência e grade do atlas, ordem de carregamento, navegação de menus, partidas completas, pontuação, fases, mira, suprimentos, efeitos, pausa, clima e os três segundos da câmera.
 
 `tests/responsive.html` mostra o jogo real em quadros de 390 × 844, 320 × 568 e 844 × 390 para conferir o layout. A versão foi verificada no Chromium em computador e nesses quadros responsivos. Safari/iOS e hardware móvel real não foram testados.

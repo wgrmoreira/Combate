@@ -6,6 +6,7 @@
   const arcade=globalThis.CombateArcade;
   const HEIGHT = 540, GRAVITY = 300, STEP = 1 / 120, FRONT = 600;
   let WORLD=1200;
+  const barrier={left:FRONT-16,right:FRONT+16,top:200,wireTop:178,bottom:HEIGHT+100};
   const clamp = (n, a, b) => Math.max(a, Math.min(b, n));
   const lerp = (a, b, t) => a + (b - a) * t;
   const rand = (a, b) => a + Math.random() * (b - a);
@@ -55,7 +56,9 @@
     seed=(Date.now()^Math.floor(Math.random()*0xffffffff))>>>0;random=rng(seed);biome=Math.floor(random()*themes.length);theme=themes[biome];
     const counts=[3,mode==='solo'?level*3:3];WORLD=Math.max(1200,760+counts[1]*52);raining=random()<.35;
     const p=random()*7,q=random()*8,r=random()*6;
-    terrain=Array.from({length:WORLD},(_,x)=>clamp(378+Math.sin(x/175+p)*37+Math.sin(x/72+q)*18+Math.sin(x/32+r)*6,295,435));
+    const broad=90+random()*45,medium=39+random()*25,fine=18+random()*13;
+    const rise=55+random()*16,ripple=27+random()*12,detail=9+random()*7;
+    terrain=Array.from({length:WORLD},(_,x)=>clamp(367+Math.sin(x/broad+p)*rise+Math.sin(x/medium+q)*ripple+Math.sin(x/fine+r)*detail,255,465));
     soldiers=[];selection[0]=selection[1]=0;
     for(let t=0;t<2;t++)for(let i=0;i<counts[t];i++){
       const x=t?Math.round(720+i*(WORLD-780)/Math.max(1,counts[t]-1)):115+i*105+Math.floor(random()*30);
@@ -69,7 +72,7 @@
   }
   function closeDialogs(){document.querySelectorAll('dialog[open]').forEach(d=>d.close());}
   function start(){unlockAudio();aimMode='sling';mode=$('mode').value;difficulty=$('difficulty').value;save('mode',mode);save('difficulty',difficulty);level=1;stats=freshStats();shots=0;prepareStage();}
-  function prepareStage(){cancelSling();closeDialogs();canAdvance=false;generate();stageStats=freshStats();state='deployment';phase='placement';paused=false;team=0;current=null;deploymentTeam=0;selectedSoldier=0;round=1;turnCount=0;elapsed=0;damage=0;angle=55;power=65;for(const s of soldiers)s.placed=s.team===1&&mode==='solo';selectPlacement(0);notify(mode==='solo'?`Fase ${level} · ${level*3} rivais. Prepare seu trio!`:'Prepare seu trio para o duelo!',4);tone(480,.16);}
+  function prepareStage(){cancelSling();aimMode='sling';closeDialogs();canAdvance=false;generate();stageStats=freshStats();state='deployment';phase='placement';paused=false;team=0;current=null;deploymentTeam=0;selectedSoldier=0;round=1;turnCount=0;elapsed=0;damage=0;angle=55;power=65;for(const s of soldiers)s.placed=s.team===1&&mode==='solo';selectPlacement(0);notify(mode==='solo'?`Fase ${level} · ${level*3} rivais. Prepare seu trio!`:'Prepare seu trio para o duelo!',4);tone(480,.16);}
   function nextStage(){if(state!=='ended'||!canAdvance||mode!=='solo')return;level++;prepareStage();}
   function selectPlacement(index){selectedSoldier=index;const s=soldiers.find(s=>s.team===deploymentTeam&&s.index===index);const min=deploymentTeam?FRONT+40:32,max=deploymentTeam?WORLD-32:FRONT-40;$('deploy-position').min=min;$('deploy-position').max=max;$('deploy-position').value=clamp(s.x,min,max);manualCamera=null;sync();}
   function placeSoldier(x){
@@ -90,7 +93,7 @@
   function beginTurn(pass=true){
     const alive=soldiers.filter(s=>s.team===team&&s.hp>0);if(!alive.length){finish();return;}
     current=alive.find(s=>s.index>=selection[team])||alive[0];selection[team]=(current.index+1)%soldiers.filter(s=>s.team===team).length;
-    actions=2;fuel=100;previous=null;phase='aim';aiTimer=1.1;manualCamera=null;moving=0;held.clear();
+    aimMode='sling';actions=2;fuel=100;previous=null;phase='aim';aiTimer=1.1;manualCamera=null;moving=0;held.clear();
     angle=team===0?55:125;power=65;
     if(pass&&mode==='local'){$('handoff-title').textContent=`${team===0?'Vanguarda':'Escarlate'}, sua vez.`;paused=true;$('handoff').showModal();}
     notify(`${current.name} em posição · 2 disparos`);sync();
@@ -115,7 +118,6 @@
     $('fuel').textContent=`${Math.round(fuel)}%`;
     ['fire','angle','power','left','right'].forEach(id=>$(id).disabled=!canAct());$('restore').disabled=!canAct()||!previous;
     $('hint').textContent=deploying?'TOQUE NO SEU LADO DO CAMPO PARA POSICIONAR':aimMode==='manual'?'MIRA MANUAL · AJUSTE ÂNGULO/FORÇA E USE DISPARAR':'PUXE PARA TRÁS E PARA BAIXO · SOLTE PARA DISPARAR';
-    $('aim-mode').textContent=aimMode==='manual'?'↔ ESTILINGUE':'⌖ MIRA MANUAL';$('aim-mode').disabled=!canAct();
     $('supply-label').title='Disparos até o próximo avião de suprimentos';$('supply-label').textContent=`✈ ${6-shots%6}`;
     $('campaign-phase').textContent=mode==='solo'?`FASE ${String(level).padStart(2,'0')}`:'DUELO LOCAL';
     $('ai-label').textContent=mode==='solo'?`MIRA IA ${aiPrecision()}% · +3% / FASE`:'2 COMANDANTES';
@@ -127,8 +129,18 @@
     const speed=230+p*4.3,rad=a*Math.PI/180;
     return{x:s.x+Math.cos(rad)*20,y:s.y-19-Math.sin(rad)*12,vx:Math.cos(rad)*speed,vy:-Math.sin(rad)*speed,time:0};
   }
-  function integrate(b,dt){b.vx+=wind*dt;b.vy+=GRAVITY*dt;b.x+=b.vx*dt;b.y+=b.vy*dt;b.time+=dt;}
+  function integrate(b,dt){b.prevX=b.x;b.prevY=b.y;b.vx+=wind*dt;b.vy+=GRAVITY*dt;b.x+=b.vx*dt;b.y+=b.vy*dt;b.time+=dt;}
+  function barrierImpact(b){
+    const x0=b.prevX??b.x,y0=b.prevY??b.y,dx=b.x-x0,dy=b.y-y0;
+    let enter=0,leave=1;
+    for(const [origin,delta,min,max] of [[x0,dx,barrier.left-2,barrier.right+2],[y0,dy,barrier.wireTop-2,barrier.bottom]]){
+      if(Math.abs(delta)<1e-9){if(origin<min||origin>max)return null;continue;}
+      let a=(min-origin)/delta,c=(max-origin)/delta;if(a>c)[a,c]=[c,a];enter=Math.max(enter,a);leave=Math.min(leave,c);if(enter>leave)return null;
+    }
+    return {x:x0+dx*enter,y:y0+dy*enter};
+  }
   function impact(b){
+    const wallHit=barrierImpact(b);if(wallHit){b.x=wallHit.x;b.y=wallHit.y;return'wall';}
     if(b.x<0||b.x>=WORLD||b.y>HEIGHT+100||b.time>9)return'out';
     if(b.y>=terrain[Math.floor(b.x)])return'ground';
     if(soldiers.some(s=>s.hp>0&&!(s===current&&b.time<.16)&&Math.abs(s.x-b.x)<10&&b.y>s.y-49&&b.y<s.y+2))return'soldier';
@@ -179,8 +191,8 @@
     if(impactFocus)return;
     actions--;if(finish())return;
     if(actions<=0||current.hp<=0){nextTurn();return;}
-    phase='aim';aiTimer=.9;manualCamera=null;
-    notify(isHuman()?'Segundo tiro: mira mantida. Ajuste e confirme.':'O rival está recalculando a mira.');sync();
+    aimMode='sling';phase='aim';aiTimer=.9;manualCamera=null;
+    notify(isHuman()?'Segundo tiro · puxe para mirar ou ajuste os controles.':'O rival está recalculando a mira.');sync();
   }
   function ai(){
     const targets=soldiers.filter(s=>s.hp>0&&s.team!==team).sort((a,b)=>a.hp-b.hp);
@@ -199,6 +211,7 @@
     const dir=moving||(held.has('ArrowRight')||held.has('d')?1:0)-(held.has('ArrowLeft')||held.has('a')?1:0);
     if(!dir||fuel<=0)return;
     const x=clamp(current.x+dir*62*dt,22,WORLD-22),y=terrain[Math.floor(x)];
+    if(Math.min(current.x,x)-14<barrier.right&&Math.max(current.x,x)+14>barrier.left)return;
     if(current.y-y>22||soldiers.some(s=>s!==current&&s.hp>0&&Math.abs(s.x-x)<25))return;
     current.x=x;current.face=dir;current.walk+=dt*12;fuel=Math.max(0,fuel-dt*29);manualCamera=null;$('fuel').textContent=`${Math.round(fuel)}%`;
   }
@@ -231,8 +244,8 @@
     if(state!=='playing')return;elapsed+=dt;updateWeatherLabel();move(dt);updateSupplies(dt);
     for(const s of soldiers){if(s.hp<=0)continue;s.y=Math.min(terrain[Math.floor(s.x)],s.y+140*dt);for(const c of crates){if(!c.taken&&c.landed&&Math.abs(s.x-c.x)<24&&Math.abs(s.y-c.y-22)<28){c.taken=true;if(c.type==='health')s.hp=Math.min(100,s.hp+30);else s.boost=true;notify(c.type==='health'?`${s.name} recuperou 30 PV`:`${s.name}: próximo tiro reforçado`);tone(700,.2,'triangle');sync();}}}
     if(phase==='flight'&&projectile){
-      integrate(projectile,dt);path.push({x:projectile.x,y:projectile.y});const hit=impact(projectile);
-      if(hit){const b=projectile;previous.path=path.slice();if(hit!=='out')burst(b.x,b.y,60,b.boost);else notify('Fora do campo. Corrija a força e o ângulo.');projectile=null;phase='settle';wait=impactFocus?3:.85;sync();}
+      integrate(projectile,dt);const hit=impact(projectile);path.push({x:projectile.x,y:projectile.y});
+      if(hit){const b=projectile;previous.path=path.slice();if(hit==='wall')notify('Muro central · lance por cima.');if(hit!=='out')burst(b.x,b.y,60,b.boost);else notify('Fora do campo. Corrija a força e o ângulo.');projectile=null;phase='settle';wait=impactFocus?3:.85;sync();}
     }else if(phase==='settle'){wait-=dt;if(wait<=0)completeShot();}
     else if(!isHuman()&&phase==='aim'){aiTimer-=dt;if(aiTimer<=0)ai();}
   }
@@ -298,6 +311,23 @@
     const time=reduced?0:elapsed;ctx.strokeStyle=night>.5?'#bed8ec9c':'#e0f6ffb5';ctx.lineWidth=1;
     for(let i=0;i<(reduced?25:100);i++){const x=((i*137-time*(35-wind))%view+view)%view,y=offsetY+(i*67+time*280)%canvas.height;ctx.beginPath();ctx.moveTo(Math.round(x),Math.round(y));ctx.lineTo(Math.round(x-3),Math.round(y+9));ctx.stroke();}
     for(let i=0;i<14;i++){const x=(i*89+seed%71)%WORLD;if(x<camera||x>camera+view)continue;const y=terrain[x];if((i+Math.floor(time*5))%3===0){rect(x-camera-2,y-1,5,1,'#c1e6efb0');rect(x-camera,y-4,1,2,'#c1e6efb0');}}
+  }
+  function drawBarrier(){
+    const x=FRONT-camera,l=barrier.left-camera,r=barrier.right-camera,top=barrier.top;
+    if(r<-35||l>view+35)return;
+    rect(l-2,top-2,36,HEIGHT-top+4,'#202a25');rect(l,top,32,HEIGHT-top,'#5d6357');
+    for(let y=top+4,row=0;y<HEIGHT;y+=11,row++){
+      for(let j=0;j<3;j++){const xx=l-8+j*17+(row%2)*8,left=Math.max(l,xx),right=Math.min(r,xx+15);if(right<=left)continue;
+        rect(left,y,right-left,9,'#7b7d69');rect(left,y,right-left,2,'#b4ad8a');rect(left,y+7,right-left,2,'#454e42');if(j%2===row%2)rect(left+2,y+3,Math.max(1,right-left-5),1,'#92917a');
+      }
+      rect(l,y,2,10,'#a19b7d');rect(r-3,y,3,10,'#3b473b');
+    }
+    rect(l-4,top-4,40,6,'#373f35');rect(l-3,top-4,38,2,'#c2b68c');
+    rect(l+3,top+17,26,13,'#27372c');for(let i=0;i<5;i++){rect(l+4+i*5,top+18,3,5,'#d7b963');rect(l+2+i*5,top+23,3,5,'#d7b963');}
+    for(const px of [l-3,r+1]){rect(px,barrier.wireTop-2,2,24,'#303f35');rect(px,barrier.wireTop-2,1,24,'#aeb59b');rect(px-2,barrier.wireTop-3,6,2,'#b3b394');}
+    // Pixel coils and crossed barbs; their height matches the physical collision cap.
+    const wireY=barrier.wireTop+7;rect(l-8,wireY,48,1,'#c3c4aa');rect(l-8,wireY+7,48,1,'#657560');
+    for(let px=l-7;px<r+7;px+=9){rect(px,wireY-5,5,1,'#cbd0b9');rect(px-2,wireY-3,1,7,'#a3b39a');rect(px+5,wireY-3,1,7,'#cbd0b9');rect(px,wireY+4,5,1,'#7c9077');rect(px+1,wireY-2,1,6,'#314936');rect(px-1,wireY,5,1,'#e0dbc1');rect(px,wireY-2,1,5,'#e0dbc1');}
   }
   function drawTerrain(){
     const start=Math.max(0,Math.floor(camera)),end=Math.min(WORLD,Math.ceil(camera+view)),tile=arcade.tiles[biome];
@@ -375,7 +405,7 @@
     const desired=clamp(target-view/2,0,WORLD-view);camera=paused||sling?camera:lerp(camera,desired,reduced?1:.075);camera=clamp(camera,0,WORLD-view);
     const victim=impactFocus?.target,focusY=victim?(victim.hp>0?victim.y:terrain[Math.floor(victim.x)]):Math.max(projectile?.y??0,current?.y??0),baseY=Math.min(170,Math.max(0,HEIGHT-canvas.height)),targetY=clamp(Math.max(baseY,focusY-canvas.height+60),baseY,Math.max(baseY,HEIGHT-canvas.height));
     if(!paused&&!sling)offsetY=lerp(offsetY,targetY,reduced?1:.1);
-    background();drawTerrain();
+    background();drawBarrier();drawTerrain();
     if(state==='deployment')drawDeployment();
     const preview=aimPreview();
     if(preview.kind!=='none'){
@@ -435,7 +465,6 @@
   $('next-stage').onclick=nextStage;
   $('pause').onclick=pause;$('resume').onclick=resume;$('ready').onclick=resume;
   $('exit').onclick=showMenu;$('result-menu').onclick=showMenu;$('fire').onclick=fire;
-  $('aim-mode').onclick=()=>setAimMode(aimMode==='manual'?'sling':'manual');
   for(let i=0;i<3;i++)$('deploy-'+i).onclick=()=>selectPlacement(i);
   $('deploy-place').onclick=()=>placeSoldier(Number($('deploy-position').value));
   $('deploy-confirm').onclick=confirmDeployment;

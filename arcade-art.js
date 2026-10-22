@@ -70,7 +70,7 @@ globalThis.CombateArcade=(()=>{
     sheet.src=script?new URL('./assets/soldados-arcade.png',script).href:'soldados-arcade.png';
   }
   if(typeof Image!=='undefined'){
-    const ground=new Image();ground.onload=()=>{for(let i=0;i<4;i++){const g=tiles[i].getContext('2d');g.imageSmoothingEnabled=false;g.drawImage(ground,0,0,96,96);if(i){g.globalCompositeOperation='multiply';g.fillStyle=['#ffffff','#dfba9c','#a8b9ac','#e9c482'][i];g.fillRect(0,0,96,96);g.globalCompositeOperation='source-over';}}};
+    const ground=new Image();ground.onload=()=>{for(let i=0;i<4;i++){const g=tiles[i].getContext('2d');g.imageSmoothingEnabled=false;g.filter='saturate(.6)';g.drawImage(ground,0,0,96,96);g.filter='none';if(i){g.globalCompositeOperation='multiply';g.fillStyle=['#ffffff','#dfba9c','#a8b9ac','#e9c482'][i];g.fillRect(0,0,96,96);g.globalCompositeOperation='source-over';}}};
     ground.src=script?new URL('./assets/terreno-arcade.png',script).href:'terreno-arcade.png';
   }
   return art;
