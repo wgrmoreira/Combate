@@ -1,8 +1,31 @@
-# COMBATE 16 · versão 1.11
+# COMBATE 16 · versão 1.14
 
 Jogo de artilharia tática em HTML5 Canvas, JavaScript e CSS. Direção de arte de arcade militar, inspirada nas referências gráficas enviadas: soldados expressivos, materiais desgastados, selva, ruínas, fumaça e fogo. Funciona como site estático no GitHub Pages, sem dependências ou compilação.
 
-## Ajustes da versão 1.11
+## Movimento contínuo nas ações especiais — versão 1.14
+
+- Cargueiro, bombardeios e paraquedista continuam em movimento durante toda a ação, inclusive nos quadros de impacto e pouso. A pausa de observação de três segundos aplica-se **somente aos tiros normais**.
+- Impactos especiais, com ou sem soldados atingidos, não criam foco fixo de câmera e não interrompem as outras bombas em queda. A câmera acompanha as cargas/paraquedista e volta a seguir o cargueiro quando elas terminam.
+- Booom mantém a animação do cogumelo, mas não impõe uma espera adicional de câmera nem impede a saída do avião. A ação termina quando o avião sai e sua carga conclui a queda.
+- A pausa manual do jogo continua congelando a simulação normalmente.
+
+## Histórico: correção de resultado da versão 1.13
+
+- A vitória de fase da campanha usa uma nova ilustração do mesmo trio da abertura, vivo e comemorando, com a mensagem FASE CONCLUÍDA e o botão CONTINUAR. O botão avança para a implantação da próxima fase e mantém a pontuação acumulada.
+- A intermissão apresenta a pontuação principal e controles imediatamente. O painel compacto deixa os heróis visíveis. A trilha é a dos menus, sem tocar Mission Failed entre fases.
+- A imagem de soldados tombados, FIM DE JOGO, estatísticas detalhadas após três segundos e Mission Failed ficam reservados ao encerramento por derrota/empate. A vitória no duelo local usa a imagem de vitória como resultado final, sem botão de próxima fase.
+- Encerrar um turno normal com ambos os esquadrões vivos não abre nenhuma tela de resultado.
+
+## Histórico: novidades da versão 1.12
+
+- Mira e elástico ficam **vermelhos** se a simulação do tiro atual termina no próprio território ou sai do mapa. A indicação continua curta; nenhum arco completo é mostrado. O cálculo usa a mesma física, vento, soldados, muro e terreno do disparo real e atualiza com mudanças da mira/cenário.
+- Cada voo de suprimentos tem **40% de chance de substituir uma das duas caixas por uma especial**. Os três tipos têm a mesma probabilidade: Reviver, Bombardeio e **Booom**.
+- Booom chama um cargueiro que lança **uma bomba nuclear no campo adversário**. Raio de explosão de 120 unidades (normal: 60), dano direto de 164 (normal: 82), mesma queda proporcional por distância. Cogumelo nuclear grande, onda de choque e som de explosão/rumor mais intenso. Conta como um disparo especial para precisão e eliminações; não avança o contador de seis tiros dos suprimentos.
+- Um cargueiro exclusivo, original em pixel art e inspirado na configuração do KC-390, realiza todas as ações especiais. Aviões e helicópteros de suprimentos/batalha distante permanecem variados.
+- **Todo impacto permanece em foco por três segundos**, incluindo chão vazio, muro e saída do mapa, com pausa congelando o tempo. A troca de tiro/turno aguarda a observação. Nos disparos do bombardeio, cada impacto é observado antes de a sequência continuar. Booom também mantém o efeito nuclear até completar a animação.
+- A câmera mantém o alvo atingido em foco quando há soldados envolvidos; para erros, acompanha a posição de impacto ou a borda do mapa por onde o tiro saiu.
+
+## Histórico: ajustes da versão 1.11
 
 - Música de batalha reduzida para **15% do nível da versão 1.10** (aproximadamente 6% da amplitude dos MP3 originais). A redução está no próprio arquivo e funciona em celulares. Menu e encerramento mantêm seus volumes anteriores.
 - Ganho dos efeitos duplicado: disparos, explosões, alertas, motores, helicópteros e chuva. Sons contínuos ainda iniciam em silêncio e não tocam nos menus.
@@ -55,11 +78,11 @@ Jogo de artilharia tática em HTML5 Canvas, JavaScript e CSS. Direção de arte 
 - Novos quadros de explosão, cogumelo nuclear, fumaça, clarão de disparo, projétil, avião, artilharia, tanque distante e caixas de suprimentos. Os efeitos de fundo são decorativos; impactos reais abrem crateras e causam dano.
 - Fantasma com volume e transparência, radar verde, placas de aço oliva, rebites, botões de latão e título com tratamento de arcade. A interface permanece compacta.
 
-As dez imagens principais foram criadas com **image_gen**, a ferramenta integrada de geração de imagens. As especificações utilizadas estão em [assets/PROMPTS.md](assets/PROMPTS.md), com os três novos fundos em [assets/CENARIOS-PROMPTS.md](assets/CENARIOS-PROMPTS.md). Os efeitos e modelos de contingência possuem fontes editáveis no código.
+As doze imagens principais foram criadas com **image_gen**, a ferramenta integrada de geração de imagens. As especificações utilizadas estão em [assets/PROMPTS.md](assets/PROMPTS.md), com os três novos fundos em [assets/CENARIOS-PROMPTS.md](assets/CENARIOS-PROMPTS.md). Os efeitos e modelos de contingência possuem fontes editáveis no código.
 
 ## Jogar e publicar
 
-Abra `index.html` mantendo os arquivos desta pasta juntos. A entrega também inclui `combate-16-v1.11.html`, com todo o código e as dez imagens e três músicas incorporadas, para jogar em um único arquivo.
+Abra `index.html` mantendo os arquivos desta pasta juntos. A entrega também inclui `combate-16-v1.14.html`, com todo o código e as doze imagens e três músicas incorporadas, para jogar em um único arquivo.
 
 Para publicar no GitHub Pages, extraia o ZIP e envie o conteúdo desta pasta para a raiz do repositório (ou pasta selecionada como origem do Pages). `index.html`, `style.css`, `arcade-art.js`, `war-assets.js`, `game.js`, `icon.svg`, `.nojekyll` e a pasta `assets` devem permanecer disponíveis. Configure o Pages para a branch e a pasta utilizadas. Não há backend nem chamadas a serviços externos durante a partida.
 
@@ -107,3 +130,7 @@ Execute `npm test` com Node.js, ou `node tests/assets.cjs` e `node tests/engine.
 Os três MP3 foram fornecidos pelo usuário e estão em `assets/music-menu.mp3`, `assets/music-game.mp3` e `assets/music-end.mp3`. As faixas do projeto foram reencodadas com nível medido de 40% dos originais, preservando música e duração; o player reproduz essas cópias diretamente.
 
 No HTML independente, os fundos e a capa usam compressão WebP sem perdas (pixels decodificados conferidos contra os PNGs); os sprites transparentes mantêm PNG. Os MP3 não incluem as imagens de capa embutidas, reduzindo o tamanho do arquivo sem afetar a música.
+
+O novo cargueiro está em `assets/cargueiro-arcade.png`; o prompt e a ferramenta utilizada estão em [assets/CARGUEIRO-PROMPT.md](assets/CARGUEIRO-PROMPT.md).
+
+Arte da intermissão: `assets/vitoria-arcade.png`. [Prompt e ferramenta image_gen](assets/VITORIA-PROMPT.md).
