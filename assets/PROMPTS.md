@@ -25,3 +25,11 @@ An original seamless square tile texture for the exposed cross-section of destru
 ## Avião e helicóptero — `aeronaves-arcade.png` · v1.8
 
 Create an original production sprite atlas for a 1990s military arcade game, with the chunky, intricate hand-pixelled mechanical aesthetic associated with Metal Slug. The supplied images are style references only; invent original aircraft designs, do not copy their silhouettes exactly. TRUE transparent background, no gradient backdrop. Exactly TWO equally sized columns, one aircraft in each half, no overlapping, no text, no UI. Left half: stubby heavy twin-engine military propeller aircraft, olive and gunmetal panels, brass engine cowls, rivets, scuffed metal, small orange identification stripe, visible cockpit pilot. Right half: compact armored assault helicopter with a bulbous segmented glass cockpit, squat mechanical fuselage, landing skids, chunky tail, exhausts, side engine pods, central mast with a short rotor hub (NO long rotor blades; game animates blades). Both aircraft face RIGHT in a clean side profile, complete tail, nose and landing gear inside their own half, centered, similarly sized, ample transparent gutters. Strong dark outline, 4-tone sculptural pixel shading per material, tiny edge highlights and mechanical wear. Crisp pixel clusters rather than smooth illustration, no photorealism, no 3D render, no insignia or logos. Models fill about 85 percent of their half width. Game-ready original pixel art sprites, high readability at small scale.
+
+## Tela final · v1.9
+
+Gerada com image_gen integrada, preservando o trio da capa. Prompt completo: [FIM-PROMPT.md](FIM-PROMPT.md).
+
+## Novos cenários · v1.10
+
+Deserto, Montanhas e Cidade japonesa: [prompts e arquivos finais](CENARIOS-PROMPTS.md). Gerados com image_gen integrada.

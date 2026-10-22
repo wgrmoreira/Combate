@@ -1,0 +1,5 @@
+# Cena final — fim-arcade.png · v1.9
+
+Ferramenta: image_gen integrada (modo padrão, sem CLI). Referência de identidade: capa-arcade.png. Imagem final salva nesta pasta como fim-arcade.png.
+
+Use case: identity-preserve. Asset type: portrait pixel-art game over background, 1024x1536. Reference image: existing game opening cover. Create an aftermath scene in precisely the same detailed 16-bit military arcade pixel-art world. Preserve the SAME THREE heroes and clothing: muscular green helmet and green sleeveless uniform; blond red bandana hero; beige cap/goggles hero with red sleeves. All three are now fallen, lying exhausted and defeated on the rubble battlefield in the lower half, recognizable faces, non-graphic, no wounds, no blood. Weapons lowered on ground. Same ruined tropical fortress, palm trees, bridge and distant orange burning ruins, smoke, quiet dusk sky. Dramatic melancholy warm embers and cool blue shadows. Keep central upper third relatively calm for a floating game score panel. Crisp pixel clusters and textured pixel shading, no typography, no logo, no UI, no watermark.
