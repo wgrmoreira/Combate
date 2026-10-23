@@ -67,7 +67,7 @@ globalThis.CombateArcade=(()=>{
   load('cargueiro-arcade.png','cargo');load('capa-arcade.png','cover');load('cenario-arcade.png','scene');load('cidade-arcade.png','city');
   load('deserto-arcade.png','desert');load('montanhas-arcade.png','mountains');load('japao-arcade.png','japan');
   if(typeof Image!=='undefined'){
-    const sheet=new Image();sheet.onload=()=>{const cw=sheet.width/3,ch=sheet.height/2;for(let t=0;t<2;t++)for(let v=0;v<3;v++){const c=sprites[t][v],g=c.getContext('2d');g.clearRect(0,0,c.width,c.height);g.imageSmoothingEnabled=false;g.drawImage(sheet,v*cw,t*ch,cw,ch,0,0,40,48);}updateOutlines();};
+    const sheet=new Image();sheet.onload=()=>{const cw=sheet.width/3,ch=sheet.height/2;for(let t=0;t<2;t++)for(let v=0;v<3;v++){const c=sprites[t][v],g=c.getContext('2d');g.clearRect(0,0,c.width,c.height);g.imageSmoothingEnabled=false;g.drawImage(sheet,v*cw,t*ch,cw,ch,0,0,40,48);}updateOutlines();art.onCover?.();};
     sheet.src=script?new URL('./assets/soldados-arcade.png',script).href:'soldados-arcade.png';
   }
   if(typeof Image!=='undefined'){

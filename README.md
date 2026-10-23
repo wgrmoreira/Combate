@@ -1,8 +1,26 @@
-# COMBATE 16 · versão 1.14
+# COMBATE 16 · versão 1.15.2
 
 Jogo de artilharia tática em HTML5 Canvas, JavaScript e CSS. Direção de arte de arcade militar, inspirada nas referências gráficas enviadas: soldados expressivos, materiais desgastados, selva, ruínas, fumaça e fogo. Funciona como site estático no GitHub Pages, sem dependências ou compilação.
 
-## Movimento contínuo nas ações especiais — versão 1.14
+## Resistência dos aliados — versão 1.15.2
+
+Na campanha, todos os soldados do jogador, incluindo reforços, recebem 20% menos dano. A redução é aplicada antes do arredondamento para pontos de vida inteiros e vale para tiros normais, reforçados, fragmentos, fogo amigo e ataques especiais. Inimigos, duelo local e deformação do terreno mantêm os valores anteriores.
+
+## Histórico: correção do fluxo entre missões — versão 1.15.1
+
+A tela Prepare sua missão aparece somente antes da primeira missão. Após vencer, CONTINUAR inicia diretamente a próxima fase, mantendo configurações e pontuação. Os avisos de início e a implantação do trio permanecem em cada fase.
+
+## Histórico: interface, treinamento e fragmentação — versão 1.15
+
+- Logo original em letras metálicas, com soldado, contorno claro e fonte Anton incorporada (licença OFL em assets). A mesma fonte aparece em INICIAR MISSÃO (4 segundos), MISSÃO COMPLETA e MISSÃO FALHOU (3 segundos).
+- Treinamento em quatro demonstrações animadas, uma por vez, alternadas a cada quatro segundos: posicionar, andar, mirar e atirar. Os quatro botões numerados também permitem escolher o passo.
+- Iniciar, Iniciar Missão e COMBATE! centralizados e sem setas. A configuração aparece antes de todas as missões, mantendo o placar da campanha. Após o aviso inicial, uma mão indica por três segundos onde posicionar os soldados.
+- Toque no campo durante um disparo humano em direção ao adversário para fragmentá-lo uma única vez em três projéteis. Cada fragmento aplica 33% do dano, com raio menor e parábolas diferentes. Os três compartilham um único crédito de precisão e não alteram a cadência de suprimentos. Tiros voltados para o próprio lado e cargas especiais não se fragmentam.
+- Frequência de tentativa de movimento da IA aumentada em 15%: de 55% para 63,25% por turno. Colisões e combustível continuam limitando o movimento.
+- Reviver: câmera acompanha o paraquedista. Bombardeio: acompanha o avião. Booom: acompanha o cargueiro até a soltura e mantém o local da bomba em foco até três segundos após a explosão. Toda a simulação continua ativa; o avião sai normalmente.
+- Testes incluem pausa dos temporizadores, bloqueio de implantação no aviso, fluxo entre fases, fragmentação, precisão compartilhada, continuidade do cargueiro e partidas completas.
+
+## Histórico: movimento contínuo nas ações especiais — versão 1.14
 
 - Cargueiro, bombardeios e paraquedista continuam em movimento durante toda a ação, inclusive nos quadros de impacto e pouso. A pausa de observação de três segundos aplica-se **somente aos tiros normais**.
 - Impactos especiais, com ou sem soldados atingidos, não criam foco fixo de câmera e não interrompem as outras bombas em queda. A câmera acompanha as cargas/paraquedista e volta a seguir o cargueiro quando elas terminam.
@@ -82,13 +100,13 @@ As doze imagens principais foram criadas com **image_gen**, a ferramenta integra
 
 ## Jogar e publicar
 
-Abra `index.html` mantendo os arquivos desta pasta juntos. A entrega também inclui `combate-16-v1.14.html`, com todo o código e as doze imagens e três músicas incorporadas, para jogar em um único arquivo.
+Abra `index.html` mantendo os arquivos desta pasta juntos. A entrega também inclui `combate-16-v1.15.2.html`, com todo o código e as doze imagens e três músicas incorporadas, para jogar em um único arquivo.
 
 Para publicar no GitHub Pages, extraia o ZIP e envie o conteúdo desta pasta para a raiz do repositório (ou pasta selecionada como origem do Pages). `index.html`, `style.css`, `arcade-art.js`, `war-assets.js`, `game.js`, `icon.svg`, `.nojekyll` e a pasta `assets` devem permanecer disponíveis. Configure o Pages para a branch e a pasta utilizadas. Não há backend nem chamadas a serviços externos durante a partida.
 
 ## Regras e controles
 
-**Iniciar → treinamento gráfico → configuração → posicionamento → combate.** Escolha campanha ou duelo local e a dificuldade. Posicione os três soldados no seu lado, tocando no terreno ou usando a barra de posição, e confirme com **COMBATER**. A câmera acompanha o soldado escolhido; o radar permite navegar pelo mapa.
+**Iniciar → treinamento gráfico → configuração → posicionamento → combate.** Escolha campanha ou duelo local e a dificuldade. Posicione os três soldados no seu lado, tocando no terreno ou usando a barra de posição, e confirme com **COMBATE!**. A câmera acompanha o soldado escolhido; o radar permite navegar pelo mapa.
 
 Cada soldado tem dois disparos por turno. No estilingue, toque sobre o soldado ativo, puxe para trás e para baixo e solte. A distância define a força; a direção define o ângulo. Um toque simples não dispara. Nenhum tiro mostra a trajetória completa.
 

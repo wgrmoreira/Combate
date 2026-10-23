@@ -56,3 +56,27 @@ input[type=range]{accent-color:#e0bb61}.scene-info span{background:#1b2c24bc;bor
 @media(min-width:900px),(min-width:651px) and (orientation:landscape){.end-screen.stage-clear{background-color:#163438;background-image:linear-gradient(90deg,#163438 0%,#16343800 70%),var(--victory-art);background-size:100% 100%,auto 150%;background-position:center,right bottom;background-repeat:no-repeat}.stage-clear .end-caption{text-align:left;margin-left:4vw;padding-left:0}.stage-clear .end-panel{margin-left:4vw;margin-right:0}}
 
 :root{--victory-art:url('assets/vitoria-arcade.png')}
+
+/* v1.15 · native arcade lettering and single animated training panel */
+@font-face{font-family:Mission;src:url('assets/Anton-Regular.ttf') format('truetype');font-display:swap}
+.primary{justify-content:center;text-align:center}
+.arcade-logo{position:relative;padding-top:64px;margin-top:8px;filter:drop-shadow(0 5px 0 #101b20)}
+#logo-soldier{position:absolute;width:80px;height:94px;top:0;left:calc(50% - 40px);image-rendering:pixelated;filter:drop-shadow(3px 0 #f5e8c9) drop-shadow(-3px 0 #f5e8c9)}
+.mission-type,#splash-title,#splash-title span{font-family:Mission,Impact,sans-serif;font-weight:400;font-style:normal;letter-spacing:2px;line-height:1.12;color:#ffd46a;-webkit-text-stroke:1.5px #482b20;text-shadow:2px 3px 0 #431d15,3px 5px 0 #152024,-2px -2px 0 #fff6d8,2px -2px 0 #fff6d8,-2px 2px 0 #fff6d8,4px 6px 0 #eee4ca}
+#splash-title{font-size:clamp(52px,13vw,86px);transform:skew(-5deg);margin:0 auto;background:linear-gradient(#fff5b5 8%,#ffc95c 38%,#e78c2f 55%,#b33d25 90%);background-clip:text;-webkit-text-fill-color:transparent;display:table;padding:0 9px}
+#splash-title span{display:block;font-size:.72em;background:linear-gradient(#fff5b5,#f4ad43 45%,#c44c29);background-clip:text;-webkit-text-fill-color:transparent;line-height:1;letter-spacing:7px}
+.guide-slide{margin:12px 0}.guide-slide canvas{width:100%;height:auto;display:block;border:2px solid #889186;image-rendering:pixelated}.guide-slide h3{font-size:22px;color:#ffc468;margin:12px 0 6px}.guide-slide p{font-size:17px;min-height:52px;margin:0;line-height:1.45}.intro-guide{width:min(520px,calc(100vw - 24px))}.intro-guide h2{font-size:27px}.guide-tabs{display:flex;justify-content:center;gap:12px;margin:12px 0 18px}.guide-tabs button{width:42px;height:42px;font-size:19px;padding:0}.guide-tabs button[aria-pressed=true]{color:#182b2b;background:#ffd582;border-color:#fff2b0}
+.mission-banner{position:absolute;inset:0;z-index:12;display:flex;align-items:center;justify-content:center;background:#17252448;pointer-events:auto}.mission-banner[hidden],#placement-hint[hidden]{display:none}.mission-banner strong{font-size:clamp(36px,7vw,76px);text-align:center;max-width:92%;animation:mission-arrive .45s both}
+#placement-hint{position:absolute;z-index:11;pointer-events:none;transform:translate(-50%,-2px);text-align:center;filter:drop-shadow(2px 2px 0 #14272d)}#placement-hint span{display:block;font:64px Arial;color:#fff5d9;animation:finger-tap .8s ease-in-out infinite}#placement-hint b{display:block;font-size:14px;color:#fff2bd;background:#1c302add;padding:5px 8px;border:1px solid #ebd39a}
+.result-banner{display:none;position:absolute;inset:0;align-items:center;justify-content:center;text-align:center;padding:16px;font-size:clamp(42px,8vw,86px);background:#17252435;z-index:3}.mission-result-intro .result-banner{display:flex;animation:mission-arrive .45s both}.mission-result-intro .end-panel,.mission-result-intro .end-caption{visibility:hidden!important;opacity:0!important;pointer-events:none}
+@keyframes finger-tap{50%{transform:translateY(-14px)}}@keyframes mission-arrive{from{opacity:0;transform:scale(1.15)}to{opacity:1;transform:scale(1)}}
+@media(prefers-reduced-motion:reduce){#placement-hint span,.mission-banner strong,.result-banner{animation:none}}
+
+.mission-type,#splash-title,#splash-title span{text-shadow:none;filter:drop-shadow(2px 3px 0 #41271d) drop-shadow(-2px 0 0 #f7edce) drop-shadow(2px 0 0 #f7edce) drop-shadow(0 -2px 0 #f7edce) drop-shadow(0 2px 0 #f7edce)}.mission-banner .mission-type,.result-banner{background:linear-gradient(#fff4b0 15%,#ffc45b 45%,#d9642b 85%);background-clip:text;-webkit-text-fill-color:transparent}.result-banner{background-color:transparent}.splash-heading{top:max(6%,env(safe-area-inset-top))}
+
+
+#placement-hint svg{display:block;margin:auto;image-rendering:pixelated}
+@media(max-height:500px) and (orientation:landscape){.arcade-logo{padding-top:42px;margin-top:2px}#logo-soldier{width:54px;height:63px;left:calc(50% - 27px)}#splash-title{font-size:44px}.splash-heading p{margin:5px}.splash-heading{top:3%}.splash-heading .eyebrow{font-size:8px}.splash-bottom{bottom:5%}.splash-bottom small{display:none}.intro-guide{padding:12px;width:min(620px,95vw)}.intro-guide h2{font-size:22px;margin:6px 0}.guide-slide{display:grid;grid-template-columns:46% 1fr;gap:8px 16px;align-items:center;margin:8px 0}.guide-slide canvas{grid-row:span 2}.guide-slide h3{font-size:20px;margin:0}.guide-slide p{font-size:15px;min-height:0}.guide-tabs{margin:6px}.guide-tabs button{width:36px;height:34px}.intro-guide>.primary{min-height:40px;margin-top:5px;padding:7px}}
+
+.end-screen.mission-result-intro{overflow:hidden}.result-banner{font-size:clamp(30px,10vw,86px)}
+

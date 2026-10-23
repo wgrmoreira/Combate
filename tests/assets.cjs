@@ -15,5 +15,5 @@ assert.ok(!ids.includes('left')&&!ids.includes('right'),'Side touch replaces mov
 assert.ok(!ids.includes('aim-mode'),'No aim-mode toggle: each shot starts with the sling');
 const scripts=[...html.matchAll(/<script src="([^"]+)"/g)].map(m=>m[1]);assert.deepEqual(scripts,['arcade-art.js','war-assets.js','game.js']);scripts.forEach(s=>assert.ok(fs.existsSync(path.join(root,s))));
 for(const name of ['music-menu.mp3','music-game.mp3','music-end.mp3']){const buf=fs.readFileSync(path.join(root,'assets',name));assert.ok(buf.length>100000,name);assert.ok(buf.subarray(0,3).toString()==='ID3'||buf[0]===255,'MP3 header');}
-assert.equal((html.match(/id="guide-[012]"/g)||[]).length,3);
+assert.equal((html.match(/id="guide-scene"/g)||[]).length,1);assert.equal((html.match(/id="guide-tab-[0-3]"/g)||[]).length,4);assert.ok(fs.existsSync(path.join(root,"assets/Anton-Regular.ttf")));
 console.log('Assets OK: twelve production PNGs and three supplied MP3s, transparent 3×2 soldier sheet, effect atlas, unique IDs and script load order.');
